@@ -1,0 +1,7 @@
+/data
+/.ipynb_checkpoints
+/.idea
+*.ipynb
+.DS_Store
+Thumbs.db
+.idea/workspace.xml

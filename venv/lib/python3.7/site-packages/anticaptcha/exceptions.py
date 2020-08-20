@@ -1,0 +1,2 @@
+class AnticaptchaException(Exception):
+    pass

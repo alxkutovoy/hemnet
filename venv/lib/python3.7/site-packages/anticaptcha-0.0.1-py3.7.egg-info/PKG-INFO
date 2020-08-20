@@ -1,0 +1,29 @@
+Metadata-Version: 1.0
+Name: anticaptcha
+Version: 0.0.1
+Summary: simple anti captcha library
+Home-page: https://github.com/ostrbor/anticaptcha
+Author: Boris Ostretsov
+Author-email: ostrbor@gmail.com
+License: MIT
+Description: anticaptcha
+        =========
+        
+        Simple anticaptcha library for images with text.
+        
+        >>> pip install anticaptcha
+        
+        .. code:: python
+           from anticaptcha import Anticaptcha
+           ac = Anticaptcha('API_TOKEN')
+           with open('captcha.png', 'rb') as img:
+                  response = ac.createTask(img.read())
+           task_id = response['taskId']
+           result = ac.getTaskResult(task_id)
+           solution = result['solution']['text']
+        
+        
+        Test with: python -m pytest
+        
+Keywords: anticaptcha anti captcha recognition
+Platform: UNKNOWN
