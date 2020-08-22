@@ -1,5 +1,6 @@
 class Parser(object):
 
+    import json
     import numpy as np
     import pandas as pd
     import re
@@ -11,23 +12,15 @@ class Parser(object):
     def _soup(self, content):
         return self.BeautifulSoup(content, "html.parser")
 
-    def _raw_address(self, content):
-        return self._soup(content).find("h1", {"class": "sold-property__address"})
+    def _raw_meta(self, content):
+        data_layer = self.re.search('dataLayer = (.*);', content).group(1)
+        return self.json.loads(data_layer)
 
     def _raw_property(self, content):
         return self._soup(content).find("p", {"class": "sold-property__metadata"})
 
-    def _raw_map(self, content):
-        return self._soup(content).find("div", {"class": "property-map"})
-
-    def _raw_endprice(self, content):
-        return self._soup(content).find("span", {"class": "sold-property__price-value"})
-
     def _raw_propdet(self, content):
         return self._soup(content).find("div", {"class": "sold-property__details"})
-
-    def _raw_broker(self, content):
-        return self._soup(content).find("div", {"class": "broker-contact-card__information"})
 
     # Cleaners
 
@@ -36,14 +29,28 @@ class Parser(object):
 
     # Data extraction
 
-    def get_address(self, content):
-        raw = self._raw_address(content)
+    def get_property_id(self, content):
+        raw = self._raw_meta(content)
         try:
-            return self.re.search('\n  (.*)\n', raw.get_text()).group(1)
+            return raw[1]["property"]["id"]
         except Exception as e:
             return None
 
-    def get_proptype(self, content):
+    def get_sold_at_date(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return self.pd.to_datetime(raw[2]["sold_property"]["sold_at_date"])
+        except Exception as e:
+            return None
+
+    def get_sold_property_id(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["id"]
+        except Exception as e:
+            return None
+
+    def get_property_type(self, content):
         raw = self._raw_property(content)
         try:
             return raw.title.get_text()
@@ -57,11 +64,60 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_owntype(self, content):
+    def get_ownership_type(self, content):
         raw = self._raw_property(content)
         try:
             owntype_parsed = self.re.search('\n  (.*) -', raw.get_text())
             return owntype_parsed.group(1)
+        except Exception as e:
+            return None
+
+    def get_country(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["country"]
+        except Exception as e:
+            return None
+
+    def get_region(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["region"]
+        except Exception as e:
+            return None
+
+    def get_urban_area(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["city"]
+        except Exception as e:
+            return None
+
+    def get_municipality(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["municipality"]
+        except Exception as e:
+            return None
+
+    def get_location(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["location"]
+        except Exception as e:
+            return None
+
+    def get_city(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["postal_city"]
+        except Exception as e:
+            return None
+
+    def get_district(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["district"]
         except Exception as e:
             return None
 
@@ -73,30 +129,43 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_municipality(self, content):
-        raw = self._raw_property(content)
+    def get_address(self, content):
+        raw = self._raw_meta(content)
         try:
-            municipality_parsed = self.re.search(',\n  (.*)\n\n', raw.get_text())
-            return municipality_parsed.group(1)
+            return raw[2]["sold_property"]["street_address"]
+        except Exception as e:
+            return None
+
+    def get_street(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return raw[2]["sold_property"]["locations"]["street"]
         except Exception as e:
             return None
 
     def get_coordinates(self, content):
-        raw = self._raw_map(content)
+        raw = self._soup(content).find("div", {"class": "property-map"})
         try:
             coordinates_parsed = self.re.search('\[(.*)\]', str(raw))
             return self.np.float_(coordinates_parsed.group(1).split(',')).tolist()
         except Exception as e:
             return None
 
-    def get_endprice(self, content):
-        raw = self._raw_endprice(content)
+    def get_start_price(self, content):
+        raw = self._raw_meta(content)
         try:
-            return int(self.re.sub("[^0-9]", "", raw.get_text()))
+            return int(raw[2]["sold_property"]["price"])
         except Exception as e:
             return None
 
-    def get_pricesqm(self, content):
+    def get_end_price(self, content):
+        raw = self._raw_meta(content)
+        try:
+            return int(raw[2]["sold_property"]["selling_price"])
+        except Exception as e:
+            return None
+
+    def get_price_sqm(self, content):
         raw = self._raw_propdet(content)
         try:
             pricesqm_parsed = self.re.search('(?<=Pris per kvadratmeter )([^ |\-]+)', self._clean_propdet(raw))
@@ -104,27 +173,17 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_startprice(self, content):
-        raw = self._raw_propdet(content)
+    def get_rums(self, content):
+        raw = self._raw_meta(content)
         try:
-            startprice_parsed = self.re.search('(?<=Begärt pris )([^ |\-]+)', self._clean_propdet(raw))
-            return int(startprice_parsed.group(1))
-        except Exception as e:
-            return None
-
-    def get_rum(self, content):
-        raw = self._raw_propdet(content)
-        try:
-            rum_parsed = self.re.search('(?<=Antal rum )([^ |\-]+)', self._clean_propdet(raw))
-            return float(rum_parsed.group(1).replace(',', '.'))
+            return float(raw[2]["sold_property"]["rooms"])
         except Exception as e:
             return None
 
     def get_area(self, content):
-        raw = self._raw_propdet(content)
+        raw = self._raw_meta(content)
         try:
-            area_parsed = self.re.search('(?<=Boarea )([^ |\-]+)', self._clean_propdet(raw))
-            return float(area_parsed.group(1).replace(',', '.'))
+            return float(raw[2]["sold_property"]["living_area"])
         except Exception as e:
             return None
 
@@ -136,35 +195,49 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_buildyear(self, content):
+    def get_build_year(self, content):
         raw = self._raw_propdet(content)
         try:
             buildyear_parsed = self.re.search('(?<=Byggår )([^_|\-]+)', self._clean_propdet(raw))
             parsed = ''.join(filter(str.isdigit, buildyear_parsed.group(1)))
-            return parsed if parsed else 'N/A'
+            return parsed
         except Exception as e:
             return None
 
-    def get_brokerfullname(self, content):
-        raw = self._raw_broker(content)
+    def get_broker_full_name(self, content):
+        raw = self._soup(content)
         try:
-            brokerfullname_parsed = ' '.join(raw.strong.get_text().replace('\n', '').strip().split()).split(' ')
-            return brokerfullname_parsed
+            broker_data = raw.find("div", {"class": "broker-contact-card__information"})
+            return ' '.join(broker_data.strong.get_text().replace('\n', '').strip().split()).split(' ')
         except Exception as e:
             return None
 
-    def get_brokeragency(self, content):
-        raw = self._raw_broker(content)
+    def get_broker_agency_id(self, content):
+        raw = self._raw_meta(content)
         try:
-            brokeragency_parsed = raw.find("a", {"class": "broker-link"})
-            return brokeragency_parsed.get_text().replace('\n', '').strip()
+            return raw[2]["sold_property"]["broker_agency_id"]
         except Exception as e:
             return None
 
-    def get_brokerphone(self, content):
-        raw = self._raw_broker(content)
+    def get_broker_agency(self, content):
+        raw = self._raw_meta(content)
         try:
-            brokerphone_parsed = raw.find("a", {"class": "broker-contact__link"})
-            return brokerphone_parsed.get('href').replace('tel:', '')
+            return raw[2]["sold_property"]["broker_agency"]
+        except Exception as e:
+            return None
+
+    def get_broker_phone(self, content):
+        raw = self._soup(content)
+        try:
+            phone_parsed = raw.find('a', {"class": "broker-contact__button-link gtm-tracking-broker-phone"})
+            return self.re.search('tel:(.*)', phone_parsed.get("href")).group(1)
+        except Exception as e:
+            return None
+
+    def get_broker_email(self, content):
+        raw = self._soup(content)
+        try:
+            email_parsed = raw.find('a', {"class": "broker-contact__button-link gtm-tracking-broker-email"})
+            return self.re.search('mailto:(.*)\?', email_parsed.get("href")).group(1)
         except Exception as e:
             return None

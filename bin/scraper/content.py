@@ -12,7 +12,7 @@ class Content(object):
         helper = self.Helper()
         helper.metadata_synch()  # Synch sitemap metadata
         sitemap_path, content_directory = '../../data/sitemap/sitemap.parquet', '../../data/content/'
-        sitemap = self.pd.read_parquet(sitemap_path)
+        sitemap = self.pd.read_parquet(sitemap_path)[:20]
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
               '\nThere are', total, 'property pages.', extracted, 'of them are extracted and', parsed, 'are parsed.')
@@ -29,9 +29,7 @@ class Content(object):
         if len(df) == 0:
             print('\nNo pages were parsed.')
             return
-        df.columns = ['hemnet_ts', 'municipality', 'neighborhood',  'address', 'proptype',  'owntype', 'coordinates',
-                      'startprice', 'endprice', 'pricesqm', 'rum', 'area',  'utils', 'buildyear', 'brokerfullname',
-                      'brokeragency', 'brokerphone', 'url']
+        df.columns = self._columns()
         df.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path)
@@ -65,28 +63,47 @@ class Content(object):
         helper.pause()  # Prevents issues with the layout of update messages im terminal
         return data
 
+    def _columns(self):
+        return [
+            "hemnet_ts", "property_id", "sold_property_id", "sold_at_date", "property_type", "ownership_type",
+            "country", "region", "urban_area", "municipality", "location", "city", "district", "neighborhood",
+            "address", "street", "coordinates", "start_price", "end_price", "price_sqm", "rums", "area", "utils",
+            "build_year", "broker_full_name", "broker_agency_id", "broker_agency", "broker_phone", "broker_email", "url"
+        ]
+
     def _parser(self, content, url):
         parser = self.Parser()
         return [parser.get_ts(content),
+                parser.get_property_id(content),
+                parser.get_sold_property_id(content),
+                parser.get_sold_at_date(content),
+                parser.get_property_type(content),
+                parser.get_ownership_type(content),
+                parser.get_country(content),
+                parser.get_region(content),
+                parser.get_urban_area(content),
                 parser.get_municipality(content),
+                parser.get_location(content),
+                parser.get_city(content),
+                parser.get_district(content),
                 parser.get_neighborhood(content),
                 parser.get_address(content),
-                parser.get_proptype(content),
-                parser.get_owntype(content),
+                parser.get_street(content),
                 parser.get_coordinates(content),
-                parser.get_startprice(content),
-                parser.get_endprice(content),
-                parser.get_pricesqm(content),
-                parser.get_rum(content),
+                parser.get_start_price(content),
+                parser.get_end_price(content),
+                parser.get_price_sqm(content),
+                parser.get_rums(content),
                 parser.get_area(content),
                 parser.get_utils(content),
-                parser.get_buildyear(content),
-                parser.get_brokerfullname(content),
-                parser.get_brokeragency(content),
-                parser.get_brokerphone(content),
+                parser.get_build_year(content),
+                parser.get_broker_full_name(content),
+                parser.get_broker_agency_id(content),
+                parser.get_broker_agency(content),
+                parser.get_broker_phone(content),
+                parser.get_broker_email(content),
                 url]
 
 
 if __name__ == '__main__':
     Content().dataset()
-d
