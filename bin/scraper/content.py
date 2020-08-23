@@ -5,14 +5,14 @@ class Content(object):
     from datetime import datetime
     from tqdm import tqdm
 
-    from bin.scraper.operations.helper import Helper
+    from bin.helpers.helper import Helper
     from bin.scraper.operations.parser import Parser
 
     def dataset(self):
         helper = self.Helper()
         helper.metadata_synch()  # Synch sitemap metadata
         sitemap_path, content_directory = '../../data/sitemap/sitemap.parquet', '../../data/content/'
-        sitemap = self.pd.read_parquet(sitemap_path)[:20]
+        sitemap = self.pd.read_parquet(sitemap_path)
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
               '\nThere are', total, 'property pages.', extracted, 'of them are extracted and', parsed, 'are parsed.')
@@ -34,7 +34,7 @@ class Content(object):
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path)
         old.update(sitemap)
-        old.to_parquet(sitemap_path, compression='gzip')
+        old.to_parquet(path=sitemap_path, compression='gzip')
         # Save into *.parquet file
         file_name, dedup_column = 'content.parquet', 'url'
         helper.save_as_parquet(df, content_directory, file_name, dedup_column)  # Save data into a *.parquet

@@ -4,7 +4,7 @@ class Captcha(object):
 
     from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask
 
-    from bin.scraper.operations.helper import Helper
+    from bin.helpers.helper import Helper
 
     def anticaptcha(self, content, url, driver):
         try:

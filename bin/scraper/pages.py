@@ -7,7 +7,7 @@ class Pages(object):
 
     from bin.scraper.operations.captcha import Captcha
     from bin.scraper.operations.engine import Engine
-    from bin.scraper.operations.helper import Helper
+    from bin.helpers.helper import Helper
 
     def dataset(self):
         engine, helper = self.Engine(), self.Helper()
@@ -36,7 +36,7 @@ class Pages(object):
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path)
         old.update(sitemap)
-        old.to_parquet(sitemap_path, compression='gzip')
+        old.to_parquet(path=sitemap_path, compression='gzip')
         print('\nThe sitemap dataset has been successfully updated.')
         # Save into *.parquet file
         helper.save_as_parquet(data=df, directory=pages_directory, file_name='pages.parquet', dedup_column='url')

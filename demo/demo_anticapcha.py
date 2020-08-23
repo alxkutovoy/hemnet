@@ -3,7 +3,7 @@ class AntiCaptchaDemo(object):
     from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask
 
     from bin.scraper.operations.engine import Engine
-    from bin.scraper.operations.helper import Helper
+    from bin.helpers.helper import Helper
     from bin.scraper.operations.captcha import Captcha
 
     def _get_sitekey(self, driver):

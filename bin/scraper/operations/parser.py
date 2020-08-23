@@ -13,8 +13,11 @@ class Parser(object):
         return self.BeautifulSoup(content, "html.parser")
 
     def _raw_meta(self, content):
-        data_layer = self.re.search('dataLayer = (.*);', content).group(1)
-        return self.json.loads(data_layer)
+        try:
+            data_layer = self.re.search('dataLayer = (.*);', content).group(1)
+            return self.json.loads(data_layer)
+        except Exception as e:
+            return None
 
     def _raw_property(self, content):
         return self._soup(content).find("p", {"class": "sold-property__metadata"})
@@ -32,7 +35,7 @@ class Parser(object):
     def get_property_id(self, content):
         raw = self._raw_meta(content)
         try:
-            return raw[1]["property"]["id"]
+            return int(raw[1]["property"]["id"])
         except Exception as e:
             return None
 
@@ -46,7 +49,7 @@ class Parser(object):
     def get_sold_property_id(self, content):
         raw = self._raw_meta(content)
         try:
-            return raw[2]["sold_property"]["id"]
+            return int(raw[2]["sold_property"]["id"])
         except Exception as e:
             return None
 
@@ -67,8 +70,8 @@ class Parser(object):
     def get_ownership_type(self, content):
         raw = self._raw_property(content)
         try:
-            owntype_parsed = self.re.search('\n  (.*) -', raw.get_text())
-            return owntype_parsed.group(1)
+            ownership_type_parsed = self.re.search('\n  (.*) -', raw.get_text())
+            return ownership_type_parsed.group(1)
         except Exception as e:
             return None
 
@@ -103,7 +106,8 @@ class Parser(object):
     def get_location(self, content):
         raw = self._raw_meta(content)
         try:
-            return raw[2]["sold_property"]["location"]
+            output = raw[2]["sold_property"]["location"]
+            return output if isinstance(output, str) else 'Error'
         except Exception as e:
             return None
 

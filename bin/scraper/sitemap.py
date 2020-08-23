@@ -9,7 +9,7 @@ class Sitemap(object):
 
     from bin.scraper.operations.captcha import Captcha
     from bin.scraper.operations.engine import Engine
-    from bin.scraper.operations.helper import Helper
+    from bin.helpers.helper import Helper
 
     def dataset(self):
         helper, engine = self.Helper(), self.Engine()

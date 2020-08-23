@@ -1,6 +1,7 @@
 class Helper:
 
     import csv
+    import json
     import os
     import pandas as pd
     import random
@@ -18,7 +19,7 @@ class Helper:
         return sum([len(files) for r, d, files in self.os.walk(self.path.join(self.os.getcwd(), directory))])
 
     def logger(self, directory, total, new, existing=0):
-        logger_path = self.path.join(directory + '/log.csv')
+        logger_path = self.path.join(directory, 'log.csv')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         ts = self.datetime.now().replace(microsecond=0)
         if self.os.path.isfile(logger_path):
@@ -33,7 +34,7 @@ class Helper:
                 writer.writerow([ts, total, new, existing])
 
     def errors(self, directory, index, url, error):
-        errors_path = self.path.join(directory + '/errors.csv')
+        errors_path = self.path.join(directory, 'errors.csv')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         ts = self.datetime.now().replace(microsecond=0)
         if self.os.path.isfile(errors_path):
@@ -115,3 +116,13 @@ class Helper:
         updated.update(sitemap)
         updated.to_parquet(sitemap_path, compression='gzip')
         print('Metadata in sitemap.parquet are up to date.')
+
+    def get_api_key(self, category, api):
+        try:
+            path = '../../../secrets/api_keys.json'
+            with open(path) as json_file:
+                api_keys = self.json.load(json_file)
+                return api_keys[category][api]
+        except Exception as e:
+            print('There is no such API key in your list of secrets.')
+            return None
