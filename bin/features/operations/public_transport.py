@@ -25,9 +25,8 @@ class PublicTransport(object):
         # Combine data sets
         print('Combine data sets...')
         data['lines'] = stops.apply(lambda x: self._get_lines(routes, x.StopPointNumber), axis=1)
-        helper.save_as_parquet(data, directory, "transport.parquet", "StopPointNumber")
+        helper.save_as_parquet(data, directory, "sl.parquet", "StopPointNumber")
         print("\nCompleted.")
-
 
     def _get_data(self, directory, name, key, update=False):
         upper_case, lower_case = name.split(".")[0].capitalize(), name.split(".")[0]

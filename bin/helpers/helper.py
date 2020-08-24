@@ -8,6 +8,7 @@ class Helper:
     import time
 
     from datetime import datetime
+    from math import sin, cos, sqrt, atan2, radians
     from os import path
     from pathlib import Path
     from tqdm import tqdm
@@ -51,6 +52,14 @@ class Helper:
     def save_as_parquet(self, data, directory, file_name, dedup_column):
         file_path = self.path.join(directory, file_name)
         print('\nSaving data into *.parquet...')
+        # If file exists but has different schema (columns) – remove it
+        if self.os.path.isfile(file_path):
+            existing = self.pd.read_parquet(file_path)
+            identical_columns = len(existing.columns.intersection(data.columns)) == data.shape[1]
+            if not identical_columns:
+                print('Datasets have different schemas. Removing the old version.')
+                self.os.remove(file_path)
+        # If exists – update
         if self.os.path.isfile(file_path):
             existing = self.pd.read_parquet(file_path)
             updated = self.pd.concat([existing, data]).drop_duplicates(subset=[dedup_column]).reset_index(drop=True)
@@ -61,6 +70,7 @@ class Helper:
             duplicates = len(data) - new
             self.logger(directory, total, new, existing)
             print('Adding', new, 'new rows.', duplicates, 'duplicates excluded.', total, 'rows in total.')
+        # Else – create a new file
         else:
             self.Path(directory).mkdir(parents=True, exist_ok=True)
             data = data.drop_duplicates(subset=[dedup_column]).reset_index(drop=True)
@@ -126,3 +136,13 @@ class Helper:
         except Exception as e:
             print('There is no such API key in your list of secrets.')
             return None
+
+    def gcs_to_dist(self, point_a, point_b):
+        lat_a, lon_a = self.radians(float(point_a[0])), self.radians(float(point_a[1]))
+        lat_b, lon_b = self.radians(float(point_b[0])), self.radians(float(point_b[1]))
+        R = 6378.137  # Radius of Earth in km
+        dlon, dlat = lon_b - lon_a, lat_b - lat_a
+        a = self.sin(dlat / 2) ** 2 + self.cos(lat_a) * self.cos(lat_b) * self.sin(dlon / 2) ** 2
+        c = 2 * self.atan2(self.sqrt(a), self.sqrt(1 - a))
+        distance = R * c * 1000  # Distance in meters
+        return distance

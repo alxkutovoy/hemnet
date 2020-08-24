@@ -1,6 +1,7 @@
-/data
-/secrets
-/resource
+data/
+secrets/
+resource/
+venv/
 
 /.ipynb_checkpoints
 /.idea
