@@ -1,0 +1,11 @@
+/data
+/resource
+/venv
+
+/.ipynb_checkpoints
+/.idea
+*.ipynb
+*.pyc
+
+.DS_Store
+Thumbs.db
