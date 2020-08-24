@@ -44,7 +44,7 @@ class PublicTransport(object):
 
     def _process_request(self, key):
         helper = self.Helper()
-        api_key = helper.get_api_key('traficlab', 'sl_stops_and_lines')
+        api_key = helper.get_api_key('traficlab', 'sl_stops_and_lines_key')
         url = "https://api.sl.se/api2/LineData.json?model={}&key={}".format(key, api_key)
         request = self.requests.get(url)
         data = request.json()

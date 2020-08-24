@@ -22,7 +22,7 @@ class Captcha(object):
 
     def _bypass_captcha(self, url, driver):
         helper = self.Helper()
-        api_key = '43dd35a02a16e89adc4efa9ae3cfd99e'
+        api_key = helper.get_api_key('anticaptcha', 'key')
         site_key = self._get_sitekey(driver)
         print('site_key:', site_key)
         try:
