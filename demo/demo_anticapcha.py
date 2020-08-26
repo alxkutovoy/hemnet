@@ -20,7 +20,7 @@ class AntiCaptchaDemo(object):
         # Fix captcha
         bad_flag = 'captcha'
         if bad_flag in content:
-            api_key = '43dd35a02a16e89adc4efa9ae3cfd99e'
+            api_key = helper.get_api_key('anticaptcha', 'key')
             print('\nExtracting site key...')
             site_key = self._get_sitekey(driver)
             print('Site key was extracted:', site_key)
