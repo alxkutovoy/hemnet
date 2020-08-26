@@ -14,7 +14,7 @@ class Transport(object):
         raw_path = '../../data/dataset/raw/data.parquet'
         data = self.pd.read_parquet(raw_path)[['url', 'coordinates']]
         # Get transport data
-        transport_path = '../../resource/public_transport/sl.parquet'
+        transport_path = '../../data/public_transport/sl.parquet'
         transport = self.pd.read_parquet(transport_path)
         transport_types = self._get_transport_types(transport)  # A list of transportation types
         # Enrich with transportation data
@@ -41,7 +41,7 @@ class Transport(object):
         # Save
         directory, name = '../../data/dataset/features', 'transport.parquet'
         self.Path(directory).mkdir(parents=True, exist_ok=True)
-        helper.save_as_parquet(data, directory, name, 'url')
+        helper.save_as_parquet(data, directory, name, ['url'])
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, transport, category):

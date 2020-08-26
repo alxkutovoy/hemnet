@@ -49,7 +49,7 @@ class Helper:
                 writer.writerow(header)
                 writer.writerow([ts, index, url, error])
 
-    def save_as_parquet(self, data, directory, file_name, dedup_column):
+    def save_as_parquet(self, data, directory, file_name, dedup_columns):
         file_path = self.path.join(directory, file_name)
         print('\nSaving data into *.parquet...')
         # If file exists but has different schema (columns) – remove it
@@ -62,7 +62,7 @@ class Helper:
         # If exists – update
         if self.os.path.isfile(file_path):
             existing = self.pd.read_parquet(file_path)
-            updated = self.pd.concat([existing, data]).drop_duplicates(subset=[dedup_column]).reset_index(drop=True)
+            updated = self.pd.concat([existing, data]).drop_duplicates(subset=dedup_columns).reset_index(drop=True)
             updated.to_parquet(file_path, compression='gzip')
             # Log and communicate
             total, existing = len(updated.index), len(existing.index)
@@ -73,7 +73,7 @@ class Helper:
         # Else – create a new file
         else:
             self.Path(directory).mkdir(parents=True, exist_ok=True)
-            data = data.drop_duplicates(subset=[dedup_column]).reset_index(drop=True)
+            data = data.drop_duplicates(subset=dedup_columns).reset_index(drop=True)
             data.to_parquet(file_path, compression='gzip')
             new = total = len(data.index)
             self.logger(directory, total, new)
