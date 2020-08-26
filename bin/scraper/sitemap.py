@@ -30,7 +30,7 @@ class Sitemap(object):
         self._add_meta_columns(df)
         # Save into *.parquet file
         file_name, dedup_column = 'sitemap.parquet', 'url'
-        helper.save_as_parquet(df, directory, file_name, dedup_column)  # Save data into a *.parquet
+        helper.save_as_parquet(df, directory, file_name, [dedup_column])  # Save data into a *.parquet
         # End
         engine.shutdown_engine()  # Close Safari
         print('\nThe sitemap dataset has been successfully updated.')

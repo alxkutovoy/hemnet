@@ -13,7 +13,7 @@ class PublicTransport(object):
     def transport(self):
         print('\nExtract public transportation data:')
         helper = self.Helper()
-        directory = "../../../resource/public_transport"
+        directory = "../../../data/library/public_transport"
         stops_name, routes_name = "stops.json", "routes.json"
         # Get raw data
         self._get_data(directory=directory, name=stops_name, key='jour', update=False)
@@ -25,7 +25,7 @@ class PublicTransport(object):
         # Combine data sets
         print('Combine data sets...')
         data['lines'] = stops.apply(lambda x: self._get_lines(routes, x.StopPointNumber), axis=1)
-        helper.save_as_parquet(data, directory, "sl.parquet", "StopPointNumber")
+        helper.save_as_parquet(data, directory, "sl.parquet", ["StopPointNumber"])
         print("\nCompleted.")
 
     def _get_data(self, directory, name, key, update=False):

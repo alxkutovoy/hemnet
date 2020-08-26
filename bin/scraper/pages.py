@@ -39,7 +39,7 @@ class Pages(object):
         old.to_parquet(path=sitemap_path, compression='gzip')
         print('\nThe sitemap dataset has been successfully updated.')
         # Save into *.parquet file
-        helper.save_as_parquet(data=df, directory=pages_directory, file_name='pages.parquet', dedup_column='url')
+        helper.save_as_parquet(data=df, directory=pages_directory, file_name='pages.parquet', dedup_columns=['url'])
         # End
         print('\nAll pages have been successfully downloaded.')
         engine.shutdown_engine()  # Close Safari
