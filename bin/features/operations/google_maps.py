@@ -11,6 +11,38 @@ class GoogleMaps(object):
 
     from bin.helpers.helper import Helper
 
+    def get_processed_data(self, pull=True):
+        print('\nProcessing Google Maps API data:')
+        helper = self.Helper()
+        directory = '../../../data/library/gmaps'
+        unprocessed_name, processed_name = 'unprocessed.parquet', 'processed.parquet'
+        unprocessed_path = self.path.join(directory, unprocessed_name)
+        # Check if unprocessed dataset exists
+        unprocessed_exists = self.os.path.isfile(unprocessed_path)
+        if pull or not unprocessed_exists:
+            print('Attempt extracting Google Maps dataset...')
+            self.get_unprocessed_data()
+        # Process data
+        print('\nProcess raw dataset...')
+        data = self.pd.read_parquet(unprocessed_path)
+        # Convert payload from str into json and explode it (1 row = 1 entity)
+        data['payload'] = data['payload'].apply(lambda x: self.json.loads(x))
+        data = data.explode('payload')
+        # Explode entity information
+        data = data.join(data['payload'].apply(self.pd.Series))
+        data['place_lat'] = data.geometry.apply(lambda x: x['location']['lat'])
+        data['place_lon'] = data.geometry.apply(lambda x: x['location']['lng'])
+        # Remove irrelevant columns and deduplicate entities
+        drop_columns = ['ts', 'epicenter_id', 'epicenter_name', 'epicenter_lat', 'epicenter_lon', 'epicenter_radius',
+                        'entity_id', 'entity_description', 'entity_type', 'entity_query', 'entity_rankby', 'request',
+                        'pages', 'payload', 'geometry', 'icon', 'opening_hours', 'photos', 'plus_code', 'reference',
+                        'types', 'business_status', 'permanently_closed']
+        data = data.drop(drop_columns, axis=1)
+        data = data.drop_duplicates(subset=['place_id']).reset_index(drop=True)
+        data.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
+        helper.save_as_parquet(data, directory, processed_name, ['place_id'])
+        print("\nCompleted.")
+
     def get_unprocessed_data(self):
         print('\nExtract Google Maps API data:')
         helper = self.Helper()
@@ -20,7 +52,7 @@ class GoogleMaps(object):
         epicenters, entities = self._json_to_df(path_epicenters), self._json_to_df(path_entities)
         data = self._cartesian_product_basic(entities, epicenters)
         # Check if exists and remove already processed items
-        directory, name = '../../../data/library/gmaps',  'unprocessed.parquet'
+        directory, name = '../../../data/library/gmaps', 'unprocessed.parquet'
         path = self.path.join(directory, name)
         exists = self.os.path.isfile(path)
         dedup_columns = ['entity_id', 'epicenter_id']
@@ -40,12 +72,12 @@ class GoogleMaps(object):
         helper.pause()
         for index in data.index:
             entry = data.loc[index]
-            request = self._request_constructor(latitude=entry.epicenter_lat,
+            request = self._request_constructor(query=entry.entity_query,
+                                                latitude=entry.epicenter_lat,
                                                 longitude=entry.epicenter_lon,
+                                                rankby=entry.entity_rankby,
                                                 radius=entry.epicenter_radius,
-                                                query=entry.entity_query,
-                                                entity_type=entry.entity_type,
-                                                rankby=entry.entity_rankby)
+                                                entity_type=entry.entity_type)
             payload = self.requests.get(request).json()
             results = payload['results']
             # Check if response is split into several pages and process all of them if that's the case
@@ -67,7 +99,7 @@ class GoogleMaps(object):
         bar.close()
         helper.pause()  # Prevents issues with the layout of update messages im terminal
         helper.save_as_parquet(data, directory, name, dedup_columns)
-        print("\nCompleted.")
+        print("\nGoogle Maps API data extraction completed.")
 
     def _request_constructor(self,
                              query=None,
@@ -99,8 +131,8 @@ class GoogleMaps(object):
     def _deduplicate_items(self, data, path, dedup_columns):
         old = self.pd.read_parquet(path)
         old = old.drop(['ts', 'request', 'pages', 'payload'], axis=1)
-        data = self.pd.concat([old, data])\
-            .drop_duplicates(subset=dedup_columns, keep=False)\
+        data = self.pd.concat([old, data]) \
+            .drop_duplicates(subset=dedup_columns, keep=False) \
             .reset_index(drop=True)
         return data
 
@@ -114,4 +146,4 @@ class GoogleMaps(object):
 
 
 if __name__ == '__main__':
-    GoogleMaps().get_unprocessed_data()
+    GoogleMaps().get_processed_data()

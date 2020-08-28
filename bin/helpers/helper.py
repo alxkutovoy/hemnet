@@ -19,20 +19,20 @@ class Helper:
     def file_counter(self, directory):
         return sum([len(files) for r, d, files in self.os.walk(self.path.join(self.os.getcwd(), directory))])
 
-    def logger(self, directory, total, new, existing=0):
+    def logger(self, directory, file_name, total, new, existing=0):
         logger_path = self.path.join(directory, 'log.csv')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         ts = self.datetime.now().replace(microsecond=0)
         if self.os.path.isfile(logger_path):
             with open(logger_path, 'a') as f:
                 writer = self.csv.writer(f)
-                writer.writerow([ts, total, new, existing])
+                writer.writerow([ts, file_name, total, new, existing])
         else:
-            header = ['ts', 'total', 'new', 'existing']
+            header = ['ts', 'file_name', 'total', 'new', 'existing']
             with open(logger_path, 'w') as f:
                 writer = self.csv.writer(f)
                 writer.writerow(header)
-                writer.writerow([ts, total, new, existing])
+                writer.writerow([ts, file_name, total, new, existing])
 
     def errors(self, directory, index, url, error):
         errors_path = self.path.join(directory, 'errors.csv')
@@ -68,7 +68,7 @@ class Helper:
             total, existing = len(updated.index), len(existing.index)
             new = total - existing
             duplicates = len(data) - new
-            self.logger(directory, total, new, existing)
+            self.logger(directory, file_name, total, new, existing)
             print('Adding', new, 'new rows.', duplicates, 'duplicates excluded.', total, 'rows in total.')
         # Else – create a new file
         else:
@@ -76,7 +76,7 @@ class Helper:
             data = data.drop_duplicates(subset=dedup_columns).reset_index(drop=True)
             data.to_parquet(file_path, compression='gzip')
             new = total = len(data.index)
-            self.logger(directory, total, new)
+            self.logger(directory, file_name, total, new)
             print('Creating', len(data.index), 'new rows.')
 
     def metadata_synch(self):
