@@ -13,6 +13,7 @@ class Pages(object):
         engine, helper = self.Engine(), self.Helper()
         helper.metadata_synch()  # Synch sitemap metadata
         sitemap_path, pages_directory = '../../data/sitemap/sitemap.parquet', '../../data/pages'
+        file_name = 'pages.parquet'
         sitemap = self.pd.read_parquet(sitemap_path)
         total, extracted = len(sitemap), (sitemap.extract == True).sum()
         print('\nDownload property pages:',
@@ -32,14 +33,14 @@ class Pages(object):
         # Info
         new = (sitemap.extract == True).sum()
         print('Adding', new, 'new pages.', new + extracted, 'pages in total.',  extracted, 'were already extracted.')
-        helper.logger(pages_directory, new + extracted, new, extracted)
+        helper.logger(pages_directory, file_name, new + extracted, new, extracted)
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path)
         old.update(sitemap)
         old.to_parquet(path=sitemap_path, compression='gzip')
         print('\nThe sitemap dataset has been successfully updated.')
         # Save into *.parquet file
-        helper.save_as_parquet(data=df, directory=pages_directory, file_name='pages.parquet', dedup_columns=['url'])
+        helper.save_as_parquet(data=df, directory=pages_directory, file_name=file_name, dedup_columns=['url'])
         # End
         print('\nAll pages have been successfully downloaded.')
         engine.shutdown_engine()  # Close Safari

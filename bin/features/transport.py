@@ -14,7 +14,7 @@ class Transport(object):
         raw_path = '../../data/dataset/raw/data.parquet'
         data = self.pd.read_parquet(raw_path)[['url', 'coordinates']]
         # Get transport data
-        transport_path = '../../data/public_transport/sl.parquet'
+        transport_path = '../../data/library/public_transport/sl.parquet'
         transport = self.pd.read_parquet(transport_path)
         transport_types = self._get_transport_types(transport)  # A list of transportation types
         # Enrich with transportation data
