@@ -37,7 +37,7 @@ class Content(object):
         old.to_parquet(path=sitemap_path, compression='gzip')
         # Save into *.parquet file
         file_name, dedup_column = 'content.parquet', 'url'
-        helper.save_as_parquet(df, content_directory, file_name, [dedup_column])  # Save data into a *.parquet
+        helper.save_as_parquet(df, content_directory, file_name, dedup_column)  # Save data into a *.parquet
         print('\nThe sitemap dataset has been successfully updated.')
 
     def _extract(self, sitemap):
