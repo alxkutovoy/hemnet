@@ -14,7 +14,7 @@ class Pages(object):
         helper.metadata_synch()  # Synch sitemap metadata
         sitemap_path, pages_directory = '../../data/sitemap/sitemap.parquet', '../../data/pages'
         file_name = 'pages.parquet'
-        sitemap = self.pd.read_parquet(sitemap_path)
+        sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted = len(sitemap), (sitemap.extract == True).sum()
         print('\nDownload property pages:',
               '\nThere are', total, 'property pages.', extracted, 'of them are already extracted.')
@@ -35,7 +35,7 @@ class Pages(object):
         print('Adding', new, 'new pages.', new + extracted, 'pages in total.',  extracted, 'were already extracted.')
         helper.logger(pages_directory, file_name, new + extracted, new, extracted)
         # Update sitemap dataset
-        old = self.pd.read_parquet(sitemap_path)
+        old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         old.update(sitemap)
         old.to_parquet(path=sitemap_path, compression='gzip')
         print('\nThe sitemap dataset has been successfully updated.')

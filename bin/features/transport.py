@@ -12,10 +12,10 @@ class Transport(object):
         helper = self.Helper()
         # Get raw property data
         raw_path = '../../data/dataset/raw/data.parquet'
-        data = self.pd.read_parquet(raw_path)[['url', 'coordinates']]
+        data = self.pd.read_parquet(raw_path, engine="fastparquet")[['url', 'coordinates']]
         # Get transport data
         transport_path = '../../data/library/public_transport/sl.parquet'
-        transport = self.pd.read_parquet(transport_path)
+        transport = self.pd.read_parquet(transport_path, engine="fastparquet")
         transport_types = self._get_transport_types(transport)  # A list of transportation types
         # Enrich with transportation data
         distances = [[0, 250], [0, 500], [0, 1000]]
