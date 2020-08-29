@@ -17,7 +17,7 @@ class Content(object):
         print('\nExtract content from pages:',
               '\nThere are', total, 'property pages.', extracted, 'of them are extracted and', parsed, 'are parsed.')
         # Filter only relevant entries and check if there are any new pages to work with
-        sitemap = sitemap.query('extract == True and parse == False')[:10]
+        sitemap = sitemap.query('extract == True and parse == False')
         if len(sitemap) == 0:
             print('\nThere are no new pages pages to extract data from.')
             return
