@@ -49,7 +49,7 @@ class GoogleMaps(object):
         # List of items
         print("\nExtracting...")
         path_epicenters, path_entities = "../../../resource/entities.json", "../../../resource/epicenters.json"
-        epicenters, entities = self._json_to_df(path_epicenters), self._json_to_df(path_entities)
+        epicenters, entities = helper.json_to_df(path_epicenters), helper.json_to_df(path_entities)
         data = self._cartesian_product_basic(entities, epicenters)
         # Check if exists and remove already processed items
         directory, name = '../../../data/library/gmaps', 'unprocessed.parquet'
@@ -135,11 +135,6 @@ class GoogleMaps(object):
             .drop_duplicates(subset=dedup_columns, keep=False) \
             .reset_index(drop=True)
         return data
-
-    def _json_to_df(self, path):
-        with open(path) as json_file:
-            data = self.json.load(json_file)
-        return self.pd.DataFrame(data)
 
     def _cartesian_product_basic(self, left, right):
         return left.assign(key=1).merge(right.assign(key=1), on='key').drop('key', 1)

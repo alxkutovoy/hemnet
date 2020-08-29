@@ -146,3 +146,8 @@ class Helper:
         c = 2 * self.atan2(self.sqrt(a), self.sqrt(1 - a))
         distance = R * c * 1000  # Distance in meters
         return distance
+
+    def json_to_df(self, path):
+        with open(path) as json_file:
+            data = self.json.load(json_file)
+        return self.pd.DataFrame(data)
