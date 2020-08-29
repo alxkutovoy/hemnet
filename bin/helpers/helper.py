@@ -54,14 +54,14 @@ class Helper:
         print('\nSaving data into *.parquet...')
         # If file exists but has different schema (columns) – remove it
         if self.os.path.isfile(file_path):
-            existing = self.pd.read_parquet(file_path)
+            existing = self.pd.read_parquet(file_path, engine="fastparquet")
             identical_columns = len(existing.columns.intersection(data.columns)) == data.shape[1]
             if not identical_columns:
                 print('Datasets have different schemas. Removing the old version.')
                 self.os.remove(file_path)
         # If exists – update
         if self.os.path.isfile(file_path):
-            existing = self.pd.read_parquet(file_path)
+            existing = self.pd.read_parquet(file_path, engine="fastparquet")
             updated = self.pd.concat([existing, data]).drop_duplicates(subset=dedup_columns).reset_index(drop=True)
             updated.to_parquet(file_path, compression='gzip')
             # Log and communicate
@@ -96,9 +96,9 @@ class Helper:
         # Hide warnings
         self.pd.options.mode.chained_assignment = None
         # Extract into pandas data frame
-        sitemap = updated = self.pd.read_parquet(sitemap_path)
-        pages = self.pd.read_parquet(pages_path) if page_exists else None
-        content = self.pd.read_parquet(content_path) if content_exists else None
+        sitemap = updated = self.pd.read_parquet(sitemap_path, engine="fastparquet")
+        pages = self.pd.read_parquet(pages_path, engine="fastparquet") if page_exists else None
+        content = self.pd.read_parquet(content_path, engine="fastparquet") if content_exists else None
         # Synchronise sitemap metadata with extracted and parsed data frames
         bar = self.tqdm(total=len(sitemap), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
         for index in sitemap.index:

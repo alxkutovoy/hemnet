@@ -12,7 +12,7 @@ class Content(object):
         helper = self.Helper()
         helper.metadata_synch()  # Synch sitemap metadata
         sitemap_path, content_directory = '../../data/sitemap/sitemap.parquet', '../../data/content/'
-        sitemap = self.pd.read_parquet(sitemap_path)
+        sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
               '\nThere are', total, 'property pages.', extracted, 'of them are extracted and', parsed, 'are parsed.')
@@ -32,7 +32,7 @@ class Content(object):
         df.columns = self._columns()
         df.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
         # Update sitemap dataset
-        old = self.pd.read_parquet(sitemap_path)
+        old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         old.update(sitemap)
         old.to_parquet(path=sitemap_path, compression='gzip')
         # Save into *.parquet file
@@ -43,7 +43,7 @@ class Content(object):
     def _extract(self, sitemap):
         helper = self.Helper()
         # Load pages.parquet
-        pages = self.pd.read_parquet('../../data/pages/pages.parquet')
+        pages = self.pd.read_parquet('../../data/pages/pages.parquet', engine="fastparquet")
         helper.pause(2)
         data, total_pages, parsed_pages = [], len(sitemap), (sitemap.parse == True).sum()
         bar = self.tqdm(total=total_pages-parsed_pages, bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')

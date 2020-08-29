@@ -24,7 +24,7 @@ class GoogleMaps(object):
             self.get_unprocessed_data()
         # Process data
         print('\nProcess raw dataset...')
-        data = self.pd.read_parquet(unprocessed_path)
+        data = self.pd.read_parquet(unprocessed_path, engine="fastparquet")
         # Convert payload from str into json and explode it (1 row = 1 entity)
         data['payload'] = data['payload'].apply(lambda x: self.json.loads(x))
         data = data.explode('payload')
@@ -129,7 +129,7 @@ class GoogleMaps(object):
         return body + parameters
 
     def _deduplicate_items(self, data, path, dedup_columns):
-        old = self.pd.read_parquet(path)
+        old = self.pd.read_parquet(path, engine='fastparquet')
         old = old.drop(['ts', 'request', 'pages', 'payload'], axis=1)
         data = self.pd.concat([old, data]) \
             .drop_duplicates(subset=dedup_columns, keep=False) \

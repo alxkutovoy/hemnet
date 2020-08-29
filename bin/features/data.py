@@ -11,7 +11,7 @@ class Data(object):
         helper = self.Helper()
         content_path = '../../data/content/content.parquet'
         directory, name = '../../data/dataset/raw', 'data.parquet'
-        content = self.pd.read_parquet(content_path)
+        content = self.pd.read_parquet(content_path, engine="fastparquet")
         # Filter relevant entries
         print('\nSample relevant entries...')
         data = content.query('urban_area == "Stockholm tätort" & property_type == "Lägenhet"')  # Configurable filters

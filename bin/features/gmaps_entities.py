@@ -12,10 +12,10 @@ class Entities(object):
         helper = self.Helper()
         # Get raw property data
         raw_path = '../../data/dataset/raw/data.parquet'
-        data = self.pd.read_parquet(raw_path)[['url', 'coordinates']]
+        data = self.pd.read_parquet(raw_path, engine="fastparquet")[['url', 'coordinates']]
         # Get Google Maps data
         gmaps_path = '../../data/library/gmaps/processed.parquet'
-        gmaps = self.pd.read_parquet(gmaps_path)[:2]
+        gmaps = self.pd.read_parquet(gmaps_path, engine="fastparquet")
         entities_types = list(gmaps.entity_category.unique())  # A list of entity types
         # Enrich with entities data
         distances = [[0, 250], [0, 500], [0, 1000]]
