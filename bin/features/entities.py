@@ -7,7 +7,7 @@ class Entities(object):
 
     from bin.helpers.helper import Helper
 
-    def gmaps(self):
+    def entities(self):
         print('\nEnrich dataset with Google Maps entities features:')
         helper = self.Helper()
         # Get raw property data
@@ -76,4 +76,4 @@ class Entities(object):
 
 
 if __name__ == '__main__':
-    Entities().gmaps()
+    Entities().entities()
