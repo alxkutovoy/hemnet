@@ -5,12 +5,13 @@ class Data(object):
     from pathlib import Path
 
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def generate_dataset(self):
         print('\nGenerate a sample from the dataset:')
-        helper = self.Helper()
-        content_path = '../../data/content/content.parquet'
-        directory, name = '../../data/dataset/raw', 'data.parquet'
+        helper, utils = self.Helper(), self.Utils()
+        content_path = utils.get_full_path('data/content/content.parquet')
+        directory, name = utils.get_full_path('data/dataset/raw'), 'data.parquet'
         content = self.pd.read_parquet(content_path, engine="fastparquet")
         # Filter relevant entries
         print('\nSample relevant entries...')

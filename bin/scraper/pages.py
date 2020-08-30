@@ -8,11 +8,13 @@ class Pages(object):
     from bin.scraper.operations.captcha import Captcha
     from bin.scraper.operations.engine import Engine
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def dataset(self):
-        engine, helper = self.Engine(), self.Helper()
+        utils, helper, engine = self.Utils(), self.Helper(), self.Engine()
         helper.metadata_synch()  # Synch sitemap metadata
-        sitemap_path, pages_directory = '../../data/sitemap/sitemap.parquet', '../../data/pages'
+        sitemap_path = utils.get_full_path('data/sitemap/sitemap.parquet')
+        pages_directory = utils.get_full_path('data/pages')
         file_name = 'pages.parquet'
         sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted = len(sitemap), (sitemap.extract == True).sum()
@@ -21,7 +23,7 @@ class Pages(object):
         # Filer only relevant entries and check if there are any new pages to work with
         sitemap = sitemap.query('extract == False')
         if len(sitemap) == 0:
-            print('\nThere are no new pages pages to extract data from.')
+            print('There are no new pages pages to extract data from.')
             return
         # Download pages
         print('\nDownloading pages...')
@@ -37,7 +39,7 @@ class Pages(object):
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         old.update(sitemap)
-        old.to_parquet(path=sitemap_path, compression='gzip')
+        old.to_parquet(path=sitemap_path, compression='gzip', engine="fastparquet")
         print('\nThe sitemap dataset has been successfully updated.')
         # Save into *.parquet file
         helper.save_as_parquet(data=df, directory=pages_directory, file_name=file_name, dedup_columns=['url'])

@@ -9,11 +9,12 @@ class PublicTransport(object):
     from pathlib import Path
 
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def transport(self):
         print('\nExtract public transportation data:')
-        helper = self.Helper()
-        directory = "../../../data/library/public_transport"
+        helper, utils = self.Helper(), self.Utils()
+        directory = utils.get_full_path("data/library/public_transport")
         stops_name, routes_name = "stops.json", "routes.json"
         # Get raw data
         self._get_data(directory=directory, name=stops_name, key='jour', update=False)

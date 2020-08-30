@@ -13,6 +13,8 @@ class Helper:
     from pathlib import Path
     from tqdm import tqdm
 
+    from utils.files import Utils
+
     def pause(self, sec=random.randint(3, 7) / 10):
         return self.time.sleep(sec)
 
@@ -63,7 +65,7 @@ class Helper:
         if self.os.path.isfile(file_path):
             existing = self.pd.read_parquet(file_path, engine="fastparquet")
             updated = self.pd.concat([existing, data]).drop_duplicates(subset=dedup_columns).reset_index(drop=True)
-            updated.to_parquet(file_path, compression='gzip')
+            updated.to_parquet(file_path, compression='gzip', engine="fastparquet")
             # Log and communicate
             total, existing = len(updated.index), len(existing.index)
             new = total - existing
@@ -74,17 +76,18 @@ class Helper:
         else:
             self.Path(directory).mkdir(parents=True, exist_ok=True)
             data = data.drop_duplicates(subset=dedup_columns).reset_index(drop=True)
-            data.to_parquet(file_path, compression='gzip')
+            data.to_parquet(file_path, compression='gzip', engine="fastparquet")
             new = total = len(data.index)
             self.logger(directory, file_name, total, new)
             print('Creating', len(data.index), 'new rows.')
 
     def metadata_synch(self):
+        utils = self.Utils()
         print('\nUpdating metadata in sitemap.parquet...')
         # Define file path
-        sitemap_path = '../../data/sitemap/sitemap.parquet'
-        pages_path = '../../data/pages/pages.parquet'
-        content_path = '../../data/content/content.parquet'
+        sitemap_path = utils.get_full_path('data/sitemap/sitemap.parquet')
+        pages_path = utils.get_full_path('data/pages/pages.parquet')
+        content_path = utils.get_full_path('data/content/content.parquet')
         # Check if file exists
         sitemap_exists = self.os.path.isfile(sitemap_path)
         page_exists = self.os.path.isfile(pages_path)
@@ -121,15 +124,16 @@ class Helper:
                 sitemap['parse_ts'][index] = None
             bar.update(1)
         bar.close()
-        self.pause()
+        self.pause(1)
         # Update sitemap
         updated.update(sitemap)
-        updated.to_parquet(sitemap_path, compression='gzip')
+        updated.to_parquet(sitemap_path, compression='gzip', engine="fastparquet")
         print('Metadata in sitemap.parquet are up to date.')
 
     def get_api_key(self, category, api):
+        utils = self.Utils()
         try:
-            path = '../../../secrets/api_keys.json'
+            path = utils.get_full_path('secrets/api_keys.json')
             with open(path) as json_file:
                 api_keys = self.json.load(json_file)
                 return api_keys[category][api]
@@ -151,3 +155,24 @@ class Helper:
         with open(path) as json_file:
             data = self.json.load(json_file)
         return self.pd.DataFrame(data)
+
+    def remove_duplicates(self, original_dataset_path, target_dataset_path, columns, dedup_columns):
+        entities_exists = self.os.path.isfile(target_dataset_path)
+        if entities_exists:
+            if columns:
+                new = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
+                old = self.pd.read_parquet(target_dataset_path, engine="fastparquet")[columns]
+            else:
+                new = self.pd.read_parquet(original_dataset_path, engine="fastparquet")
+                old = self.pd.read_parquet(target_dataset_path, engine="fastparquet")
+            data = self.pd.concat([old, new]) \
+                .drop_duplicates(subset=dedup_columns, keep=False) \
+                .reset_index(drop=True)
+            print('Dataset exists and contains {} rows. Adding {} new rows.'.format(len(old), len(data)))
+        else:
+            if columns:
+                data = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
+            else:
+                data = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
+            print('Dataset does not exists yet. Extracting {} new rows.'.format(len(data)))
+        return data

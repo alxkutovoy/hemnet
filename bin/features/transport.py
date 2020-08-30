@@ -1,20 +1,30 @@
 class Transport(object):
+
     import functools
     import pandas as pd
 
+    from os import path
     from pathlib import Path
     from tqdm import tqdm
 
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def transport(self):
         print('\nEnrich dataset with Stockholm public transportation features:')
-        helper = self.Helper()
+        helper, utils = self.Helper(), self.Utils()
         # Get raw property data
-        raw_path = '../../data/dataset/raw/data.parquet'
-        data = self.pd.read_parquet(raw_path, engine="fastparquet")[['url', 'coordinates']]
+        dataset_path = utils.get_full_path('data/dataset/raw/data.parquet')
+        transport_directory, transport_name = utils.get_full_path('data/dataset/features'), 'transport.parquet'
+        transport_path = self.path.join(transport_directory, transport_name)
+        columns, dedup_columns = ['url', 'coordinates'], ['url']
+        data = helper.remove_duplicates(dataset_path, transport_path, columns, dedup_columns)
+        # Check if anything to work on
+        if len(data) == 0:
+            print('There are no new properties to work on.')
+            return
         # Get transport data
-        transport_path = '../../data/library/public_transport/sl.parquet'
+        transport_path = utils.get_full_path('data/library/public_transport/sl.parquet')
         transport = self.pd.read_parquet(transport_path, engine="fastparquet")
         transport_types = self._get_transport_types(transport)  # A list of transportation types
         # Enrich with transportation data
@@ -39,9 +49,8 @@ class Transport(object):
         bar.close()
         helper.pause()  # Prevents issues with the layout of update messages im terminal
         # Save
-        directory, name = '../../data/dataset/features', 'transport.parquet'
-        self.Path(directory).mkdir(parents=True, exist_ok=True)
-        helper.save_as_parquet(data, directory, name, ['url'])
+        self.Path(transport_directory).mkdir(parents=True, exist_ok=True)
+        helper.save_as_parquet(data, transport_directory, transport_name, dedup_columns)
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, transport, category):

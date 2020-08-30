@@ -10,11 +10,12 @@ class GoogleMaps(object):
     from tqdm import tqdm
 
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def get_processed_data(self, pull=True):
         print('\nProcessing Google Maps API data:')
-        helper = self.Helper()
-        directory = '../../../data/library/gmaps'
+        helper, utils = self.Helper(), self.Utils()
+        directory = utils.get_full_path('data/library/gmaps')
         unprocessed_name, processed_name = 'unprocessed.parquet', 'processed.parquet'
         unprocessed_path = self.path.join(directory, unprocessed_name)
         # Check if unprocessed dataset exists
@@ -32,6 +33,8 @@ class GoogleMaps(object):
         data = data.join(data['payload'].apply(self.pd.Series))
         data['place_lat'] = data.geometry.apply(lambda x: x['location']['lat'])
         data['place_lon'] = data.geometry.apply(lambda x: x['location']['lng'])
+        # Remove irrelevant entities
+        data = data.query('business_status == "OPERATIONAL" and permanently_closed != True and user_ratings_total > 0')
         # Remove irrelevant columns and deduplicate entities
         drop_columns = ['ts', 'epicenter_id', 'epicenter_name', 'epicenter_lat', 'epicenter_lon', 'epicenter_radius',
                         'entity_id', 'entity_description', 'entity_type', 'entity_query', 'entity_rankby', 'request',
@@ -45,14 +48,15 @@ class GoogleMaps(object):
 
     def get_unprocessed_data(self):
         print('\nExtract Google Maps API data:')
-        helper = self.Helper()
+        helper, utils = self.Helper(), self.Utils()
         # List of items
         print("\nExtracting...")
-        path_epicenters, path_entities = "../../../resource/entities.json", "../../../resource/epicenters.json"
+        path_entities = utils.get_full_path("resource/entities.json")
+        path_epicenters = utils.get_full_path("resource/epicenters.json")
         epicenters, entities = helper.json_to_df(path_epicenters), helper.json_to_df(path_entities)
         data = self._cartesian_product_basic(entities, epicenters)
         # Check if exists and remove already processed items
-        directory, name = '../../../data/library/gmaps', 'unprocessed.parquet'
+        directory, name = utils.get_full_path('data/library/gmaps'), 'unprocessed.parquet'
         path = self.path.join(directory, name)
         exists = self.os.path.isfile(path)
         dedup_columns = ['entity_id', 'epicenter_id']
@@ -61,7 +65,7 @@ class GoogleMaps(object):
             data = self._deduplicate_items(data, path, dedup_columns)
         # Check if anything to work on
         if len(data) == 0:
-            print('\nThere are no new entities to work on.')
+            print('There are no new entities to work on.')
             return
         # Add dummy columns
         data.insert(0, 'ts', None)
