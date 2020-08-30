@@ -10,12 +10,13 @@ class Sitemap(object):
     from bin.scraper.operations.captcha import Captcha
     from bin.scraper.operations.engine import Engine
     from bin.helpers.helper import Helper
+    from utils.files import Utils
 
     def dataset(self):
-        helper, engine = self.Helper(), self.Engine()
+        utils, helper, engine = self.Utils(), self.Helper(), self.Engine()
         driver = engine.initiate_engine()
         print('\nExtract sitemap data:')
-        data, directory = [], '../../data/sitemap'
+        data, directory = [], utils.get_full_path('data/sitemap')
         sitemap_list = list(range(1, self._total_pages(driver) + 1))
         # Extract data from the website
         print('\nParsing sitemap...')

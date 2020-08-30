@@ -7,11 +7,13 @@ class Content(object):
 
     from bin.helpers.helper import Helper
     from bin.scraper.operations.parser import Parser
+    from utils.files import Utils
 
     def dataset(self):
-        helper = self.Helper()
+        utils, helper = self.Utils(), self.Helper()
         helper.metadata_synch()  # Synch sitemap metadata
-        sitemap_path, content_directory = '../../data/sitemap/sitemap.parquet', '../../data/content/'
+        sitemap_path = utils.get_full_path('data/sitemap/sitemap.parquet')
+        content_directory = utils.get_full_path('data/content')
         sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
@@ -19,7 +21,7 @@ class Content(object):
         # Filter only relevant entries and check if there are any new pages to work with
         sitemap = sitemap.query('extract == True and parse == False')
         if len(sitemap) == 0:
-            print('\nThere are no new pages pages to extract data from.')
+            print('There are no new pages pages to extract data from.')
             return
         # Extract data
         print('\nExtracting content...')
@@ -34,16 +36,17 @@ class Content(object):
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         old.update(sitemap)
-        old.to_parquet(path=sitemap_path, compression='gzip')
+        old.to_parquet(path=sitemap_path, compression='gzip', engine="fastparquet")
         # Save into *.parquet file
         file_name, dedup_column = 'content.parquet', 'url'
         helper.save_as_parquet(df, content_directory, file_name, dedup_column)  # Save data into a *.parquet
         print('\nThe sitemap dataset has been successfully updated.')
 
     def _extract(self, sitemap):
-        helper = self.Helper()
+        utils, helper = self.Utils(), self.Helper()
         # Load pages.parquet
-        pages = self.pd.read_parquet('../../data/pages/pages.parquet', engine="fastparquet")
+        pages_path = utils.get_full_path('data/pages/pages.parquet')
+        pages = self.pd.read_parquet(pages_path, engine="fastparquet")
         helper.pause(2)
         data, total_pages, parsed_pages = [], len(sitemap), (sitemap.parse == True).sum()
         bar = self.tqdm(total=total_pages-parsed_pages, bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
