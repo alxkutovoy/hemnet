@@ -25,7 +25,7 @@ class Helper:
         logger_path = self.path.join(directory, 'log.csv')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         ts = self.datetime.now().replace(microsecond=0)
-        if self.os.path.isfile(logger_path):
+        if self.exists(logger_path):
             with open(logger_path, 'a') as f:
                 writer = self.csv.writer(f)
                 writer.writerow([ts, file_name, total, new, existing])
@@ -40,7 +40,7 @@ class Helper:
         errors_path = self.path.join(directory, 'errors.csv')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         ts = self.datetime.now().replace(microsecond=0)
-        if self.os.path.isfile(errors_path):
+        if self.exists(errors_path):
             with open(errors_path, 'a') as f:
                 writer = self.csv.writer(f)
                 writer.writerow([ts, index, url, error])
@@ -55,14 +55,14 @@ class Helper:
         file_path = self.path.join(directory, file_name)
         print('\nSaving data into *.parquet...')
         # If file exists but has different schema (columns) – remove it
-        if self.os.path.isfile(file_path):
+        if self.exists(file_path):
             existing = self.pd.read_parquet(file_path, engine="fastparquet")
             identical_columns = len(existing.columns.intersection(data.columns)) == data.shape[1]
             if not identical_columns:
                 print('Datasets have different schemas. Removing the old version.')
                 self.os.remove(file_path)
         # If exists – update
-        if self.os.path.isfile(file_path):
+        if self.exists(file_path):
             existing = self.pd.read_parquet(file_path, engine="fastparquet")
             updated = self.pd.concat([existing, data]).drop_duplicates(subset=dedup_columns).reset_index(drop=True)
             updated.to_parquet(file_path, compression='gzip', engine="fastparquet")
@@ -89,9 +89,9 @@ class Helper:
         pages_path = utils.get_full_path('data/pages/pages.parquet')
         content_path = utils.get_full_path('data/content/content.parquet')
         # Check if file exists
-        sitemap_exists = self.os.path.isfile(sitemap_path)
-        page_exists = self.os.path.isfile(pages_path)
-        content_exists = self.os.path.isfile(content_path)
+        sitemap_exists = self.exists(sitemap_path)
+        page_exists = self.exists(pages_path)
+        content_exists = self.exists(content_path)
         # Break if sitemap dies not exist
         if not sitemap_exists:
             print('\nSitemap *.parquet does not exist.')
@@ -130,6 +130,9 @@ class Helper:
         updated.to_parquet(sitemap_path, compression='gzip', engine="fastparquet")
         print('Metadata in sitemap.parquet are up to date.')
 
+    def exists(self, path):
+        return self.os.path.isfile(path)
+
     def get_api_key(self, category, api):
         utils = self.Utils()
         try:
@@ -157,7 +160,7 @@ class Helper:
         return self.pd.DataFrame(data)
 
     def remove_duplicates(self, original_dataset_path, target_dataset_path, columns, dedup_columns):
-        entities_exists = self.os.path.isfile(target_dataset_path)
+        entities_exists = self.exists(target_dataset_path)
         if entities_exists:
             if columns:
                 new = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
