@@ -7,16 +7,17 @@ class Preprocessing(object):
     from pathlib import Path
 
     from bin.helpers.helper import Helper
+    from bin.model.eda import EDA
     from bin.model.operations.feature_engineering import FeatureEngineering
     from utils.files import Utils
 
     def preprocessing(self):
         print('\nPreprocess dataset:')
-        helper, utils, fe = self.Helper(), self.Utils(), self.FeatureEngineering()
+        helper, utils, fe, eda = self.Helper(), self.Utils(), self.FeatureEngineering(), self.EDA()
 
         # Get initial data
         data_path = utils.get_full_path('data/dataset/enriched/data.parquet')
-        data = self.pd.read_parquet(data_path, engine="fastparquet")
+        data = self.pd.read_parquet(data_path, engine="fastparquet").sample(20)
 
         # Special columns
         ts_column, target_column, index_column = 'sold_at_date', 'end_price', 'sold_property_id'
@@ -95,7 +96,10 @@ class Preprocessing(object):
         self._save_dataset(directory=directory, name='test', x=x_test, y=y_test, e=extras_test)
         print('Done.')
 
-        print('\nPostprocessing was successfully completed.')
+        # Create report for x_train
+        eda.report(data=x_train, name='x_train', comments=True, sample=1000)
+
+        print('\nPreprocessing was successfully completed.')
 
     # Helpers
 
