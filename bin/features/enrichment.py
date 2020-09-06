@@ -8,7 +8,7 @@ class Enrichment(object):
     from utils.files import Utils
 
     def data(self):
-        print('\nGenerate a sample from the dataset:')
+        print('\nCompile enriched dataset:')
         helper, utils = self.Helper(), self.Utils()
         # Raw data
         data_path = utils.get_full_path('data/dataset/raw/data.parquet')
