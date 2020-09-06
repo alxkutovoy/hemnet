@@ -62,10 +62,10 @@ class Entities(object):
             self._column_check(data, name, suffix)
         subset = gmaps.query(query_filter)
         data['entities' + suffix][index] = len(list(subset.place_id.unique()))
-        data['scores_mean' + suffix][index] = subset.rating.mean()
-        data['scores_median' + suffix][index] = subset.rating.median()
-        data['reviews_mean' + suffix][index] = subset.user_ratings_total.mean()
-        data['reviews_median' + suffix][index] = subset.user_ratings_total.median()
+        data['scores_mean' + suffix][index] = subset.rating.mean().round(2)
+        data['scores_median' + suffix][index] = subset.rating.median().round(2)
+        data['reviews_mean' + suffix][index] = subset.user_ratings_total.mean().round(2)
+        data['reviews_median' + suffix][index] = subset.user_ratings_total.median().round(2)
 
     def _get_suffix(self, category, min_dist=None, max_dist=None):
         if min_dist is not None and max_dist is not None:
