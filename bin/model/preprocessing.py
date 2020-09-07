@@ -17,7 +17,7 @@ class Preprocessing(object):
 
         # Get initial data
         data_path = utils.get_full_path('data/dataset/enriched/data.parquet')
-        data = self.pd.read_parquet(data_path, engine="fastparquet").sample(20)
+        data = self.pd.read_parquet(data_path, engine="fastparquet")
 
         # Special columns
         ts_column, target_column, index_column = 'sold_at_date', 'end_price', 'sold_property_id'
@@ -98,7 +98,6 @@ class Preprocessing(object):
 
         # Create report for x_train
         eda.report(data=x_train, name='x_train', comments=True, sample=1000)
-
         print('\nPreprocessing was successfully completed.')
 
     # Helpers
@@ -159,13 +158,13 @@ class Preprocessing(object):
         e = data.loc[:, non_modeling_features]
         return [x, y, e]
 
-    def _partitions(self, data, train_size1=0.8, test_size1=0.3):
-        split = data.quantile([0, train_size1, 1])
+    def _partitions(self, data, train_size=0.8, test_size=0.3):
+        split = data.quantile([0, train_size, 1])
         train_0, oot_0, oot_1 = str(split[0].date()), str(split[0.8].date()), str(split[1].date())
         return {
             'train_test':
                 {'window': [train_0, oot_0],
-                 'test_size': test_size1},
+                 'test_size': test_size},
             'oot':
                 {'window': [oot_0, oot_1],
                  'test_size': 1}

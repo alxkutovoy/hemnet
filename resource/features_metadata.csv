@@ -12,7 +12,7 @@ urban_area;categorical;False
 municipality;categorical;True
 location;categorical;False
 city;categorical;True
-district;categorical;True
+district;categorical;False
 neighborhood;categorical;True
 address;categorical;False
 street;categorical;True
