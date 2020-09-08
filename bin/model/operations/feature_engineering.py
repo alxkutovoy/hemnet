@@ -229,4 +229,4 @@ class FeatureEngineering(object):
         path = self.path.join(directory, 'property_clustering.png')
         self.Path(directory).mkdir(parents=True, exist_ok=True)
         plot.figure.savefig(path, dpi=900)
-        self.plt.close(plot)
+        self.plt.close()
