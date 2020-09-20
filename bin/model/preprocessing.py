@@ -59,12 +59,14 @@ class Preprocessing(object):
             fe.district_clean(data=data[['district']]),
             fe.clustering(data=data[['coordinates']])
         ]
+
         # Series of features
         continuous_count_columns = self._columns_matcher(data=data, pattern=continuous_count)
         print(f'\tBooleans for {len(continuous_count_columns)} columns...', end=' ', flush=True)
         for column in self._columns_matcher(data=data, pattern=continuous_count):
             features += [fe.threshold(data[[column]])]
         print('Done.')
+
         # Extend metadata
         for feature in features:
             data[feature['name']] = feature['content']
@@ -75,7 +77,8 @@ class Preprocessing(object):
         # Filter values and groom columns
         data = self._groom_dtype(data=data,
                                  dtypes=dict(zip(metadata.name, metadata.dtype)),
-                                 exceptions=[ts_column])
+                                 exceptions=[ts_column],
+                                 target_column=target_column)
 
         # Split into train, validation and test sets
         datasets = self._create_partitions(data=data, ts_column=ts_column)
@@ -122,14 +125,20 @@ class Preprocessing(object):
         print('Done.')
         return datasets
 
-    def _groom_dtype(self, data, dtypes, missing_category=False, exceptions=None):
+    def _groom_dtype(self, data, dtypes, missing_category=False, exceptions=None, target_column=None):
         print('\tFilter values and groom columns...', end=' ', flush=True)
         replace_values = [None, '']
         for feature, value in dtypes.items():
             if exceptions is not None and feature in exceptions:
                 continue
+            # Convert lists into strings
             if type(data[feature].iloc[0]) == list:
                 data[feature] = data[feature].str.join(' ')
+            # Normalise target variable
+            if feature == target_column:
+                from sklearn.preprocessing import FunctionTransformer
+                transformer = FunctionTransformer(self.np.log1p, validate=True)
+                data[target_column] = transformer.transform(data[[target_column]])
             if feature in data.columns:
                 if value == 'continuous':
                     data[feature] = self.pd.to_numeric(data[feature], errors='coerce') \
