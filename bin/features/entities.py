@@ -62,10 +62,10 @@ class Entities(object):
             self._column_check(data, name, suffix)
         subset = gmaps.query(query_filter)
         data['entities' + suffix][index] = len(list(subset.place_id.unique()))
-        data['scores_mean' + suffix][index] = subset.rating.mean().round(2)
-        data['scores_median' + suffix][index] = subset.rating.median().round(2)
-        data['reviews_mean' + suffix][index] = subset.user_ratings_total.mean().round(2)
-        data['reviews_median' + suffix][index] = subset.user_ratings_total.median().round(2)
+        data['scores_mean' + suffix][index] = round(subset.rating.mean(), 2)
+        data['scores_median' + suffix][index] = round(subset.rating.median(), 2)
+        data['reviews_mean' + suffix][index] = round(subset.user_ratings_total.mean(), 2)
+        data['reviews_median' + suffix][index] = round(subset.user_ratings_total.median(), 2)
 
     def _get_suffix(self, category, min_dist=None, max_dist=None):
         if min_dist is not None and max_dist is not None:
@@ -75,9 +75,9 @@ class Entities(object):
 
     def _get_filter(self, category, min_dist=None, max_dist=None):
         if min_dist is not None and max_dist is not None:
-            return 'distance >= {} & distance < {} & entity_category == "{}"'.format(min_dist, max_dist, category)
+            return f'distance >= {min_dist} & distance < {max_dist} & entity_category == "{category}"'
         else:
-            return 'entity_category == "{}"'.format(category)
+            return f'entity_category == "{category}"'
 
     def _column_check(self, data, name, suffix):
         if name + suffix not in data.columns:

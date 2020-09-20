@@ -11,13 +11,13 @@ class Captcha(object):
             attempt = 1
             while 'captcha' in str(content):
                 print('A page is protected by ReCaptcha. Calling AntiCaptcha...',
-                      'Attempt:', str(attempt) + '.')
+                      f'Attempt: {attempt}.')
                 self._bypass_captcha(url, driver)
                 content = driver.page_source
                 attempt += 1
         except Exception as e:
             method_name = self.sys._getframe().f_code.co_name
-            print('[Error] Method:', method_name + '.', 'Error message: ' + str(e))
+            print(f'[Error] Method: {method_name}. Error message: {str(e)}.')
         return content
 
     def _bypass_captcha(self, url, driver):
@@ -42,13 +42,13 @@ class Captcha(object):
             helper.pause(4)
         except Exception as e:
             method_name = self.sys._getframe().f_code.co_name
-            print('[Error] Method:', method_name + '.', 'Error message:', str(e) + '.')
+            print(f'[Error] Method: {method_name}. Error message: {str(e)}.')
 
     def _get_sitekey(self, driver):
         return driver.find_element_by_class_name("g-recaptcha").get_attribute("data-sitekey")
 
     def _form_submit(self, driver, response):
         helper = self.Helper()
-        driver.execute_script("document.getElementById('g-recaptcha-response').innerHTML='{}';".format(response))
+        driver.execute_script(f"document.getElementById('g-recaptcha-response').innerHTML='{response}';")
         driver.find_element_by_id("recaptcha-submit").submit()
         helper.pause(2)
