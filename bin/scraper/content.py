@@ -17,7 +17,7 @@ class Content(object):
         sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
-              '\nThere are', total, 'property pages.', extracted, 'of them are extracted and', parsed, 'are parsed.')
+              f'\nThere are {total} property pages. {extracted} of them are extracted and {parsed} are parsed.')
         # Filter only relevant entries and check if there are any new pages to work with
         sitemap = sitemap.query('extract == True and parse == False')
         if len(sitemap) == 0:

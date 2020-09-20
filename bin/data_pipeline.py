@@ -14,6 +14,8 @@ class DataPipeline(object):
         self.run_scraper()
         self.run_features()
 
+    # Data scraping
+
     def run_scraper(self):
         sitemap = self.Sitemap()
         pages = self.Pages()
@@ -21,6 +23,8 @@ class DataPipeline(object):
         sitemap.dataset()
         pages.dataset()
         content.dataset()
+
+    # Enrichment layer
 
     def run_features(self):
         data = self.Data()
@@ -33,6 +37,8 @@ class DataPipeline(object):
         transport.transport()
         destinations.destinations()
         enrichment.data()
+
+    # Modeling
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ class Pages(object):
         sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
         total, extracted = len(sitemap), (sitemap.extract == True).sum()
         print('\nDownload property pages:',
-              '\nThere are', total, 'property pages.', extracted, 'of them are already extracted.')
+              f'\nThere are {total} property pages. {extracted} of them are already extracted.')
         # Filer only relevant entries and check if there are any new pages to work with
         sitemap = sitemap.query('extract == False')
         if len(sitemap) == 0:
@@ -34,7 +34,7 @@ class Pages(object):
         df.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
         # Info
         new = (sitemap.extract == True).sum()
-        print('Adding', new, 'new pages.', new + extracted, 'pages in total.',  extracted, 'were already extracted.')
+        print(f'Adding {new} new pages. {new + extracted} pages in total. {extracted} were already extracted.')
         helper.logger(pages_directory, file_name, new + extracted, new, extracted)
         # Update sitemap dataset
         old = self.pd.read_parquet(sitemap_path, engine="fastparquet")

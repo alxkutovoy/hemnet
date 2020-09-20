@@ -87,14 +87,14 @@ class Transport(object):
     def _get_filter(self, category, min_dist=None, max_dist=None):
         if category == 'ALL':
             if min_dist is not None and max_dist is not None:
-                return 'distance >= {} & distance < {}'.format(min_dist, max_dist)
+                return f'distance >= {min_dist} & distance < {max_dist}'
             else:
                 return 'StopAreaTypeCode != ""'
         else:
             if min_dist is not None and max_dist is not None:
-                return 'distance >= {} & distance < {} & StopAreaTypeCode == "{}"'.format(min_dist, max_dist, category)
+                return f'distance >= {min_dist} & distance < {max_dist} & StopAreaTypeCode == "{category}"'
             else:
-                return 'StopAreaTypeCode == "{}"'.format(category)
+                return f'StopAreaTypeCode == "{category}"'
 
     def _count_distinct_lines(self, subset):
         if list(subset.lines):

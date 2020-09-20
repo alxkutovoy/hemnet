@@ -7,7 +7,7 @@ class Hyperparameters(object):
 
     from bayes_opt import BayesianOptimization
     from datetime import datetime
-    from lightgbm.sklearn import LGBMClassifier
+    from lightgbm.sklearn import LGBMRegressor
     from os import path
     from pathlib import Path
 
@@ -86,13 +86,13 @@ class Hyperparameters(object):
         n_estimators = int(n_estimators)
         min_child_samples = int(min_child_samples)
         # Train model
-        classifier = self.LGBMClassifier(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate,
+        regressor = self.LGBMRegressor(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate,
                                          n_estimators=n_estimators, min_child_samples=min_child_samples,
                                          colsample_bytree=colsample_bytree, silent=True, objective="regression",
                                          boosting_type='gbdt', scale_pos_weight=scale_pos_weight, n_jobs=-1,
                                          nthread=None, random_state=28, seed=None, natural_bad_rate=None)
         # Calculate scores
-        scores = cross_val_score(classifier, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
+        scores = cross_val_score(regressor, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
         return self.np.mean(scores)
 
     def _save_results(self, optimizer, start):

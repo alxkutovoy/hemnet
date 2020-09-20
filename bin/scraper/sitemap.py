@@ -58,10 +58,10 @@ class Sitemap(object):
             if content is not None:
                 return self._decompose(content=content, input_type='sitemap')
             else:
-                print('Something went wrong at the page ' + str(index) + '!')
+                print(f'Something went wrong at the page {index}!')
         except Exception as e:
             method_name = self.sys._getframe().f_code.co_name
-            print('[Error] Method:', method_name + '.', 'Error message:', str(e) + '.')
+            print(f'[Error] Method: {method_name}. Error message: {str(e)}.')
 
     def _decompose(self, content, input_type='sitemap'):
         block = None
@@ -81,7 +81,7 @@ class Sitemap(object):
             return output
         except Exception as e:
             method_name = self.sys._getframe().f_code.co_name
-            print('[Error] Method:', method_name + '.', 'Error message: ' + str(e))
+            print(f'[Error] Method: {method_name}. Error message: {str(e)}.')
 
     def _total_pages(self, driver):
         helper = self.Helper()
@@ -93,7 +93,7 @@ class Sitemap(object):
             if 'sold_properties' in element[0]:
                 current_value = int(''.join(x for x in element[0] if x.isdigit()))  # Get only numbers from the string
                 max_value = max(max_value, current_value)
-        print('The total number of sitemap pages is ' + str(max_value) + '.')
+        print(f'The total number of sitemap pages is {max_value}.')
         return max_value
 
 

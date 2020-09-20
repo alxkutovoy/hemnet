@@ -71,7 +71,7 @@ class Helper:
             new = total - existing
             duplicates = len(data) - new
             self.logger(directory, file_name, total, new, existing)
-            print('Adding', new, 'new rows.', duplicates, 'duplicates excluded.', total, 'rows in total.')
+            print(f'Adding {new} new rows. {duplicates} duplicates excluded. {total} rows in total.')
         # Else – create a new file
         else:
             self.Path(directory).mkdir(parents=True, exist_ok=True)
@@ -79,7 +79,7 @@ class Helper:
             data.to_parquet(file_path, compression='gzip', engine="fastparquet")
             new = total = len(data.index)
             self.logger(directory, file_name, total, new)
-            print('Creating', len(data.index), 'new rows.')
+            print(f'Creating {len(data.index)} new rows.')
 
     def metadata_synch(self):
         utils = self.Utils()
@@ -171,11 +171,11 @@ class Helper:
             data = self.pd.concat([old, new]) \
                 .drop_duplicates(subset=dedup_columns, keep=False) \
                 .reset_index(drop=True)
-            print('Dataset exists and contains {} rows. Adding {} new rows.'.format(len(old), len(data)))
+            print(f'Dataset exists and contains {len(old)} rows. Adding {len(data)} new rows.')
         else:
             if columns:
                 data = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
             else:
                 data = self.pd.read_parquet(original_dataset_path, engine="fastparquet")[columns]
-            print('Dataset does not exists yet. Extracting {} new rows.'.format(len(data)))
+            print(f'Dataset does not exists yet. Extracting {len(data)} new rows.')
         return data
