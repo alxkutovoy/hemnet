@@ -19,14 +19,12 @@ class Hyperparameters(object):
     def hyperparameters_tuning(self):
         print('\nRun hyperparameters optimisation:')
         start = self.datetime.now().replace(microsecond=0)
-
         # Get data and features
         print('\n\tGet data and a list of features...', end=' ', flush=True)
         x_train, y_train = self._get_processed_data()
         features = self._get_features()
         x_train = x_train[features]
         print('Done.')
-
         # Define boundaries
         print('\tDefine boundaries and a function...', end=' ', flush=True)
         pbounds = {'learning_rate': (0.01, 0.2),
@@ -40,12 +38,10 @@ class Hyperparameters(object):
         def f(**kwargs):
             return self._cv_score(x_train, y_train, **kwargs)
         print('Done.')
-
         # Run optimiser
         print('\n\tRun BayesianOptimization...\n')
         optimizer = self.BayesianOptimization(f=f, pbounds=pbounds, random_state=28)
         optimizer.maximize(init_points=5, n_iter=100)
-
         # Save result
         self._save_results(optimizer, start)
         print("\nHyperparameters optimisation was successfully completed.")
@@ -86,13 +82,13 @@ class Hyperparameters(object):
         n_estimators = int(n_estimators)
         min_child_samples = int(min_child_samples)
         # Train model
-        regressor = self.LGBMRegressor(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate,
-                                         n_estimators=n_estimators, min_child_samples=min_child_samples,
-                                         colsample_bytree=colsample_bytree, silent=True, objective="regression",
-                                         boosting_type='gbdt', scale_pos_weight=scale_pos_weight, n_jobs=-1,
-                                         nthread=None, random_state=28, seed=None, natural_bad_rate=None)
+        estimator = self.LGBMRegressor(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate,
+                                       n_estimators=n_estimators, min_child_samples=min_child_samples,
+                                       colsample_bytree=colsample_bytree, silent=True, objective="regression",
+                                       boosting_type='gbdt', scale_pos_weight=scale_pos_weight, n_jobs=-1,
+                                       nthread=None, random_state=28, seed=None, natural_bad_rate=None)
         # Calculate scores
-        scores = cross_val_score(regressor, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
+        scores = cross_val_score(estimator, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
         return self.np.mean(scores)
 
     def _save_results(self, optimizer, start):
@@ -103,11 +99,17 @@ class Hyperparameters(object):
         duration = self.datetime.now().replace(microsecond=0) - start
         data = {'ts': str(start), 'duration': str(duration), 'hyperparameters': optimizer.max}
         if helper.exists(path):
-            with open(path, 'a') as f:
-                f.write(self.json.dumps(data) + "\n")
+            with open(path) as f:
+                existing = self.json.load(f)
+                updated = existing + [data]
+                f.close()
+            with open(path, 'w') as f:
+                f.write(self.json.dumps(updated))
+                f.close()
         else:
             with open(path, 'w+') as f:
-                f.write(self.json.dumps(data) + "\n")
+                f.write(self.json.dumps([data]))
+                f.close()
 
 
 if __name__ == '__main__':
