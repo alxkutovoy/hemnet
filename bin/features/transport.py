@@ -3,35 +3,30 @@ class Transport(object):
     import functools
     import pandas as pd
 
-    from os import path
-    from pathlib import Path
     from tqdm import tqdm
 
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
+    from utils.geo import Geo
 
     def transport(self):
         print('\nEnrich dataset with Stockholm public transportation features:')
-        helper, utils = self.Helper(), self.Utils()
+        helper, io = self.Helper(), self.IO()
         # Get raw property data
-        dataset_path = utils.get_full_path('data/dataset/raw/data.parquet')
-        transport_directory, transport_name = utils.get_full_path('data/dataset/features'), 'transport.parquet'
-        transport_path = self.path.join(transport_directory, transport_name)
-        columns, dedup_columns = ['url', 'coordinates'], ['url']
-        data = helper.remove_duplicates(dataset_path, transport_path, columns, dedup_columns)
+        data = helper.remove_duplicates(self.File.SUBSET, self.File.TRANSPORT, ['url', 'coordinates'], ['url'])
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
             return
         # Get transport data
-        transport_path = utils.get_full_path('data/library/public_transport/sl.parquet')
-        transport = self.pd.read_parquet(transport_path, engine="fastparquet")
+        transport = io.read_pq(self.File.SL_PROCESSED)
         transport_types = self._get_transport_types(transport)  # A list of transportation types
         # Enrich with transportation data
         distances = [[0, 250], [0, 500], [0, 1000]]
-        helper.pause(2)
+        io.pause(2)
         bar = self.tqdm(total=len(data), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        helper.pause()
+        io.pause()
         for index in data.index:
             entry = data.loc[[index]]
             coordinates = entry.coordinates.item()
@@ -47,10 +42,9 @@ class Transport(object):
                     self._generate_distance_features(index, data, distance, subset, category)
             bar.update(1)
         bar.close()
-        helper.pause()  # Prevents issues with the layout of update messages im terminal
+        io.pause()  # Prevents issues with the layout of update messages im terminal
         # Save
-        self.Path(transport_directory).mkdir(parents=True, exist_ok=True)
-        helper.save_as_parquet(data, transport_directory, transport_name, dedup_columns)
+        helper.update_pq(data=data, path=self.File.TRANSPORT, dedup=['url'])
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, transport, category):
@@ -65,8 +59,8 @@ class Transport(object):
         data['points' + suffix][index] = len(list(subset.StopPointNumber.unique()))
 
     def _calculate_distances(self, transport, coordinates):
-        helper = self.Helper()
-        return transport.apply(lambda x: helper.gcs_to_dist(
+        geo = self.Geo()
+        return transport.apply(lambda x: geo.gcs_to_dist(
             coordinates, [x.LocationNorthingCoordinate, x.LocationEastingCoordinate]), axis=1)
 
     def _get_transport_types(self, t):

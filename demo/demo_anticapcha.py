@@ -3,24 +3,25 @@ class AntiCaptchaDemo(object):
     from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask
 
     from bin.scraper.operations.engine import Engine
-    from bin.helpers.helper import Helper
     from bin.scraper.operations.captcha import Captcha
+
+    from utils.api import API
+    from utils.io import IO
 
     def _get_sitekey(self, driver):
         return driver.find_element_by_class_name("g-recaptcha").get_attribute("data-sitekey")
 
     def download(self, page_url):
-        engine, helper, captcha = self.Engine(), self.Helper(), self.Captcha()
+        engine, io, captcha, api = self.Engine(), self.IO(), self.Captcha(), self.API()
         driver = engine.initiate_engine()
-
-        helper.pause(2)
+        io.pause(2)
         driver.get(page_url)
-        helper.pause()
+        io.pause()
         content = driver.page_source
         # Fix captcha
         bad_flag = 'captcha'
         if bad_flag in content:
-            api_key = helper.get_api_key('anticaptcha', 'key')
+            api_key = api.key(service='anticaptcha', category='key')
             print('\nExtracting site key...')
             site_key = self._get_sitekey(driver)
             print('Site key was extracted:', site_key)
@@ -35,7 +36,7 @@ class AntiCaptchaDemo(object):
             driver.execute_script("document.getElementById('g-recaptcha-response').innerHTML='{}';".format(response))
             driver.find_element_by_id("recaptcha-demo-submit").submit()
             print('\nCompleted.')
-            helper.pause(60)
+            io.pause(60)
 
 
 if __name__ == '__main__':

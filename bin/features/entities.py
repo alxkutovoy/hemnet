@@ -2,42 +2,37 @@ class Entities(object):
 
     import pandas as pd
 
-    from os import path
-    from pathlib import Path
     from tqdm import tqdm
 
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
+    from utils.geo import Geo
 
     def entities(self):
         print('\nEnrich dataset with Google Maps entities features:')
-        helper, utils = self.Helper(), self.Utils()
+        helper, io, geo = self.Helper(), self.IO(), self.Geo()
         # Get raw property data
-        dataset_path = utils.get_full_path('data/dataset/raw/data.parquet')
-        entities_directory, entities_name = utils.get_full_path('data/dataset/features'), 'entities.parquet'
-        entities_path = self.path.join(entities_directory, entities_name)
-        columns, dedup_columns = ['url', 'coordinates'], ['url']
-        data = helper.remove_duplicates(dataset_path, entities_path, columns, dedup_columns)
+        data = helper.remove_duplicates(self.File.SUBSET, self.File.ENTITIES, ['url', 'coordinates'], ['url'])
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
             return
         # Get Google Maps data
-        gmaps_path = utils.get_full_path('data/library/gmaps/processed.parquet')
-        gmaps = self.pd.read_parquet(gmaps_path, engine="fastparquet")
+        gmaps = io.read_pq(self.File.GMAPS_PROCESSED)
         entities_types = list(gmaps.entity_category.unique())  # A list of entity types
         # Enrich with entities data
         print('\nCalculating features...')
         distances = [[0, 250], [0, 500], [0, 1000]]
-        helper.pause(2)
+        io.pause(2)
         bar = self.tqdm(total=len(data), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        helper.pause()
+        io.pause()
         for index in data.index:
             entry = data.loc[[index]]
             coordinates = entry.coordinates.item()
             # Calculate distances from a specific given location to all entities
             self.pd.set_option('mode.chained_assignment', None)
-            gmaps['distance'] = gmaps.apply(lambda x: helper.gcs_to_dist(
+            gmaps['distance'] = gmaps.apply(lambda x: geo.gcs_to_dist(
                 coordinates, [x.place_lat, x.place_lon]), axis=1)
             for category in entities_types:
                 query, suffix = self._get_filter(category), self._get_suffix(category)
@@ -48,10 +43,9 @@ class Entities(object):
                     self._generate_distance_features(index, data, distance, subset, category)
             bar.update(1)
         bar.close()
-        helper.pause()  # Prevents issues with the layout of update messages im terminal
+        io.pause()  # Prevents issues with the layout of update messages im terminal
         # Save
-        self.Path(entities_directory).mkdir(parents=True, exist_ok=True)
-        helper.save_as_parquet(data, entities_directory, entities_name, ['url'])
+        helper.update_pq(data=data, path=self.File.ENTITIES, dedup=['url'])
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, gmaps, category):
