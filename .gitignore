@@ -1,7 +1,6 @@
-/data
+/res
 /venv
 /cache
-/output
 
 /.ipynb_checkpoints
 /.idea
