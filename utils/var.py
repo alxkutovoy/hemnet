@@ -1,53 +1,90 @@
-from enum import Enum
+class Dir(object):
 
+    from utils.io import IO
 
-class Dir(Enum):
+    io = IO()
+
     # Directory for the prepocessed data subset
-    PREPROCESSED = 'data/dataset/processed'
-    EDA = 'data/eda'
+    PREPROCESSED = io.abs_path('res/data/processed')
+
+    # EDA directory
+    EDA = io.abs_path('res/report/eda')
+
+    # Raw data
+    RAW = io.abs_path('res/data/raw')
+
+    # Google Maps library
+    GMAPS = io.abs_path('res/lib/gmaps')
+
+    # Public transportation library
+    PUBLIC_TRANSPORT = io.abs_path('res/lib/public_transport')
+
+    # Enriched data and layers
+    ENRICHED = io.abs_path('res/data/enriched')
 
 
 class File(object):
+
+    from utils.io import IO
+
+    io = IO()
+
     # Scrapped data
-    SITEMAP = 'data/sitemap/sitemap.parquet'
-    PAGES = 'data/pages/pages.parquet'
-    CONTENT = 'data/content/content.parquet'
+    SITEMAP = io.path_join(Dir.RAW, 'sitemap/sitemap.parquet')
+    PAGES = io.path_join(Dir.RAW, 'pages/pages.parquet')
+    CONTENT = io.path_join(Dir.RAW, 'content/content.parquet')
+
     # Subset of content that includes only relevant (filtered) entries
-    SUBSET = 'data/dataset/raw/data.parquet'
-    # Google maps
-    POINTS = 'resource/points.json'
-    ENTITIES = 'resource/entities.json'
-    EPICENTERS = 'resource/epicenters.json'
-    GMAPS_UNPROCESSED = 'data/library/gmaps/unprocessed.parquet'
-    GMAPS_PROCESSED = 'data/library/gmaps/processed.parquet'
+    SUBSET = io.abs_path('res/data/subset/data.parquet')
+
+    # Points
+    POINTS = io.abs_path('res/lib/points.json')
+
+    # Google Maps
+    ENTITIES_LIST = io.path_join(Dir.GMAPS, 'entities.json')
+    EPICENTERS_LIST = io.path_join(Dir.GMAPS, 'epicenters.json')
+    GMAPS_UNPROCESSED = io.path_join(Dir.GMAPS,  'unprocessed.parquet')
+    GMAPS_PROCESSED = io.path_join(Dir.GMAPS, 'processed.parquet')
+
     # Public transportation
-    SL_STOPS = 'data/library/public_transport/stops.json'
-    SL_ROUTES = 'data/library/public_transport/routes.json'
-    SL_PROCESSED = 'data/library/public_transport/sl.parquet'
+    SL_STOPS = io.path_join(Dir.PUBLIC_TRANSPORT, 'stops.json')
+    SL_ROUTES = io.path_join(Dir.PUBLIC_TRANSPORT, 'routes.json')
+    SL_PROCESSED = io.path_join(Dir.PUBLIC_TRANSPORT, 'sl.parquet')
+
     # Enrichment layers
-    DESTINATIONS = 'data/dataset/features/destinations.parquet'
-    ENTITIES_PATH = 'data/dataset/features/entities.parquet'  # TODO: Rename
-    TRANSPORT = 'data/dataset/features/transport.parquet'
+    DESTINATIONS = io.path_join(Dir.ENRICHED, 'layers/destinations.parquet')
+    ENTITIES = io.path_join(Dir.ENRICHED, 'layers/entities.parquet')
+    TRANSPORT = io.path_join(Dir.ENRICHED, 'layers/transport.parquet')
+
     # Enriched subset
-    ENRICHED_SUBSET = 'data/dataset/enriched/data.parquet'
+    ENRICHED_SUBSET = io.path_join(Dir.ENRICHED, 'data.parquet')
+
     # Preprocessed data
-    X_TRAIN = 'data/dataset/processed/x_train'
-    Y_TRAIN = 'data/dataset/processed/y_train'
-    E_TRAIN = 'data/dataset/processed/e_train'
-    X_VAL = 'data/dataset/processed/x_val'
-    Y_VAL = 'data/dataset/processed/y_val'
-    E_VAL = 'data/dataset/processed/e_val'
-    X_TEST = 'data/dataset/processed/x_test'
-    Y_TEST = 'data/dataset/processed/y_test'
-    E_TEST = 'data/dataset/processed/e_test'
+    X_TRAIN = io.path_join(Dir.PREPROCESSED, 'x_train')
+    Y_TRAIN = io.path_join(Dir.PREPROCESSED, 'y_train')
+    E_TRAIN = io.path_join(Dir.PREPROCESSED, 'e_train')
+
+    X_VAL = io.path_join(Dir.PREPROCESSED, 'x_val')
+    Y_VAL = io.path_join(Dir.PREPROCESSED, 'y_val')
+    E_VAL = io.path_join(Dir.PREPROCESSED, 'e_val')
+
+    X_TEST = io.path_join(Dir.PREPROCESSED, 'x_test')
+    Y_TEST = io.path_join(Dir.PREPROCESSED, 'y_test')
+    E_TEST = io.path_join(Dir.PREPROCESSED, 'e_test')
+
     # Features
-    FEATURES_METADATA = 'resource/features_metadata.csv'
-    SELECTED_FEATURES = 'data/dataset/processed/operations/features.txt'  # Results of the feature selection step
+    FEATURES_METADATA = io.abs_path('res/lib/features_metadata.csv')
+    SELECTED_FEATURES = io.abs_path('res/model/features.txt')
+
     # Hyperparameters
-    HYPERPARAMETERS = 'data/dataset/processed/operations/bayesian_hyperparameters.json'
+    HYPERPARAMETERS = io.abs_path('res/model/bayesian_hyperparameters.json')
+
     # Model
-    MODEL = 'output/model/model.pkl'
+    MODEL = io.abs_path('res/model/model.pkl')
+
     # Reports and illustrations
-    PROPERTY_CLUSTERING_REPORT = 'data/dataset/reporting/property_clustering.png'
-    FEATURE_IMPORTANCE_REPORT = 'data/dataset/reporting/feature_importance.png'
-    EDA_REPORT = 'data/eda/data_profiling_report.html'
+    PROPERTY_CLUSTERING_REPORT = io.abs_path('res/report/property_clustering.png')
+    FEATURE_IMPORTANCE_REPORT = io.abs_path('res/report/feature_importance.png')
+
+    # API keys
+    API_KEYS = io.abs_path('secrets/api_keys.json')
