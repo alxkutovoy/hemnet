@@ -1,4 +1,5 @@
-class DataPipeline(object):
+class Pipeline(object):
+
     from bin.scraper.sitemap import Sitemap
     from bin.scraper.pages import Pages
     from bin.scraper.content import Content
@@ -23,47 +24,28 @@ class DataPipeline(object):
     # Data scraping
 
     def run_scraper(self):
-        # Initiate
-        sitemap = self.Sitemap()
-        pages = self.Pages()
-        content = self.Content()
-        # Run
-        sitemap.dataset()
-        pages.dataset()
-        content.dataset()
+        self.Sitemap().dataset()
+        self.Pages().dataset()
+        self.Content().dataset()
 
     # Enrichment layer
 
     def run_features(self):
-        # Initiate
-        data = self.Data()
-        entities = self.Entities()
-        transport = self.Transport()
-        destinations = self.Destinations()
-        enrichment = self.Enrichment()
-        # Run
-        data.generate_dataset()
-        entities.entities()
-        transport.transport()
-        destinations.destinations()
-        enrichment.data()
+        self.Data().generate_dataset()
+        self.Entities().entities()
+        self.Transport().transport()
+        self.Destinations().destinations()
+        self.Enrichment().data()
 
     # Modeling
-    
+
     def run_model(self):
-        # Initiate
-        eda = self.EDA()
-        preprocessing = self.Preprocessing()
-        feature_selection = self.FeatureSelection()
-        hyperparameters = self.Hyperparameters()
-        train = self.Train()
-        # Run
-        eda.report()
-        preprocessing.preprocessing()
-        feature_selection.feature_selection()
-        hyperparameters.hyperparameters_tuning()
-        train.train()
+        self.EDA().report()
+        self.Preprocessing().preprocessing()
+        self.FeatureSelection().feature_selection()
+        self.Hyperparameters().hyperparameters_tuning()
+        self.Train().train()
 
 
 if __name__ == '__main__':
-    DataPipeline().run_pipeline()
+    Pipeline().run_pipeline()
