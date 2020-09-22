@@ -2,27 +2,26 @@ class Hyperparameters(object):
 
     import json
     import numpy as np
-    import pandas as pd
     import warnings
 
     from bayes_opt import BayesianOptimization
-    from datetime import datetime
     from lightgbm.sklearn import LGBMRegressor
-    from os import path
-    from pathlib import Path
 
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.data import Data
+    from utils.var import File
+    from utils.io import IO
 
     warnings.simplefilter(action='ignore', category=UserWarning)
 
     def hyperparameters_tuning(self):
+        io = self.IO()
         print('\nRun hyperparameters optimisation:')
-        start = self.datetime.now().replace(microsecond=0)
+        start = io.now()
         # Get data and features
         print('\n\tGet data and a list of features...', end=' ', flush=True)
-        x_train, y_train = self._get_processed_data()
-        features = self._get_features()
+        data = self.Data().processed()
+        x_train, y_train = data['x_train'], data['y_train'].values.ravel()
+        features = self.Data().features()
         x_train = x_train[features]
         print('Done.')
         # Define boundaries
@@ -34,7 +33,6 @@ class Hyperparameters(object):
                    'min_child_samples': (100, 1000),
                    'colsample_bytree': (0.5, 1.0)
                    }
-
         def f(**kwargs):
             return self._cv_score(x_train, y_train, **kwargs)
         print('Done.')
@@ -43,35 +41,8 @@ class Hyperparameters(object):
         optimizer = self.BayesianOptimization(f=f, pbounds=pbounds, random_state=28)
         optimizer.maximize(init_points=5, n_iter=100)
         # Save result
-        self._save_results(optimizer, start)
+        self._save_results(optimizer=optimizer, start=start, entries=len(x_train))
         print("\nHyperparameters optimisation was successfully completed.")
-
-    def _get_processed_data(self):
-        helper, utils = self.Helper(), self.Utils()
-        # Get path
-        x_path = utils.get_full_path('data/dataset/processed/x_test')
-        y_path = utils.get_full_path('data/dataset/processed/y_test')
-        # Check if exists
-        exists = all([helper.exists(x_path), helper.exists(y_path)])
-        if not exists:
-            print('Sorry, datasets does not exist. Please, run preprocessing first.')
-            return
-        # Convert to DataFrame
-        x, y = self.pd.read_parquet(x_path, engine="fastparquet"), self.pd.read_parquet(y_path, engine="fastparquet")
-        return x, y.values.ravel()
-
-    def _get_features(self):
-        helper, utils = self.Helper(), self.Utils()
-        # Get path
-        path = utils.get_full_path('data/dataset/processed/operations/features.txt')
-        # Check if exists
-        exists = helper.exists(path)
-        if not exists:
-            print('Sorry, feature list does not exist. Please, run feature selection first.')
-            return
-        with open(path, 'r') as f:
-            features = f.read().split('\n')
-        return features
 
     def _cv_score(self, x_train, y_train, learning_rate=0.1, num_leaves=200, max_depth=3, n_estimators=500,
                   min_child_samples=100, colsample_bytree=1, scale_pos_weight=1):
@@ -91,14 +62,13 @@ class Hyperparameters(object):
         scores = cross_val_score(estimator, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
         return self.np.mean(scores)
 
-    def _save_results(self, optimizer, start):
-        helper, utils = self.Helper(), self.Utils()
-        directory = utils.get_full_path('data/dataset/processed/operations')
-        path = self.path.join(directory, 'bayesian_hyperparameters.json')
-        self.Path(directory).mkdir(parents=True, exist_ok=True)
-        duration = self.datetime.now().replace(microsecond=0) - start
-        data = {'ts': str(start), 'duration': str(duration), 'hyperparameters': optimizer.max}
-        if helper.exists(path):
+    def _save_results(self, optimizer, start, entries):  # TODO: Save into CSV instead of JSON
+        io = self.IO()
+        path = self.File.HYPERPARAMETERS
+        io.make_dir(io.dir(path))
+        duration = io.now() - start
+        data = {'ts': str(start), 'duration': str(duration), 'entries:': entries, 'hyperparameters': optimizer.max}
+        if io.exists(path):
             with open(path) as f:
                 existing = self.json.load(f)
                 updated = existing + [data]
