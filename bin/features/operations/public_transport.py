@@ -1,64 +1,55 @@
 class PublicTransport(object):
 
     import json
-    import os
     import pandas as pd
     import requests
 
-    from os import path
-    from pathlib import Path
-
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
+    from utils.api import API
 
     def transport(self):
         print('\nExtract public transportation data:')
-        helper, utils = self.Helper(), self.Utils()
-        directory = utils.get_full_path("data/library/public_transport")
-        stops_name, routes_name = "stops.json", "routes.json"
+        helper, io = self.Helper(), self.IO()
         # Get raw data
-        self._get_data(directory=directory, name=stops_name, key='jour', update=False)
-        self._get_data(directory=directory, name=routes_name, key='stop', update=False)
+        self._get_data(path=self.File.SL_STOPS, key='stop', update=False)
+        self._get_data(path=self.File.SL_ROUTES, key='jour', update=False)
         # Get data frames from json
         print('\nConvert *.json into pandas data frame...')
-        stops = data = self._json_to_df(directory, stops_name)
-        routes = self._json_to_df(directory, routes_name)
+        stops = self._json_to_df(self.File.SL_STOPS)
+        routes = self._json_to_df(self.File.SL_ROUTES)
+        data = stops
         # Combine data sets
         print('Combine data sets...')
         data['lines'] = stops.apply(lambda x: self._get_lines(routes, x.StopPointNumber), axis=1)
-        helper.save_as_parquet(data, directory, "sl.parquet", ["StopPointNumber"])
+        helper.update_pq(data=data, path=self.File.SL_PROCESSED, dedup=["StopPointNumber"])
         print("\nCompleted.")
 
-    def _get_data(self, directory, name, key, update=False):
+    def _get_data(self, path, key, update=False):
+        io = self.IO()
+        name = io.base(path)
         upper_case, lower_case = name.split(".")[0].capitalize(), name.split(".")[0]
-        print('\nRetrieve {} data:'.format(lower_case))
+        print(f'\nRetrieve {lower_case} data:')
         # Don't update if exists and no order to update
-        file_path = self.path.join(directory, name)
-        if self.os.path.isfile(file_path) and not update:
-            print('{} data is already downloaded.'.format(upper_case))
+        if io.exists(path) and not update:
+            print(f'{upper_case} data is already downloaded.')
         else:
             data = self._process_request(key)
-            print('{} data was retrieved. Saving...'.format(upper_case))
+            print(f'{upper_case} data was retrieved. Saving...')
             # Save file
-            self._save_json(data, directory, name)
-            print('{} data was saved.'.format(upper_case))
+            io.save_json(data=data, path=path)
+            print(f'{upper_case} data was saved.')
 
     def _process_request(self, key):
-        helper = self.Helper()
-        api_key = helper.get_api_key('traficlab', 'sl_stops_and_lines_key')
-        url = "https://api.sl.se/api2/LineData.json?model={}&key={}".format(key, api_key)
+        api = self.API()
+        api_key = api.key('traficlab', 'sl_stops_and_lines_key')
+        url = f"https://api.sl.se/api2/LineData.json?model={key}&key={api_key}"
         request = self.requests.get(url)
         data = request.json()
         return data
 
-    def _save_json(self, data, directory, name):
-        self.Path(directory).mkdir(parents=True, exist_ok=True)
-        json_path = self.path.join(directory, name)
-        with open(json_path, 'w') as f:
-            self.json.dump(data, f)
-
-    def _json_to_df(self, directory, name):
-        path = self.path.join(directory, name)
+    def _json_to_df(self, path):
         with open(path) as json_file:
             data = self.json.load(json_file)
         df = self.pd.DataFrame(data['ResponseData']['Result'])
@@ -67,7 +58,7 @@ class PublicTransport(object):
     def _get_lines(self, routes, stop_number):
         stop_number = str(stop_number)
         if len(stop_number) == 4:
-            stop_number = '0' + stop_number
+            stop_number = '0' + stop_number  # NB! It is actually used in a query below
         return list(set(list(routes.query('JourneyPatternPointNumber == @stop_number').LineNumber)))  # set = dedup
 
 

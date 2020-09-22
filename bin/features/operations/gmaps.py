@@ -1,31 +1,26 @@
 class GoogleMaps(object):
 
     import json
-    import os
     import pandas as pd
     import requests
 
-    from datetime import datetime
-    from os import path
     from tqdm import tqdm
 
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
+    from utils.api import API
 
     def get_processed_data(self, pull=True):
         print('\nProcessing Google Maps API data:')
-        helper, utils = self.Helper(), self.Utils()
-        directory = utils.get_full_path('data/library/gmaps')
-        unprocessed_name, processed_name = 'unprocessed.parquet', 'processed.parquet'
-        unprocessed_path = self.path.join(directory, unprocessed_name)
+        helper, io = self.Helper(), self.IO()
         # Check if unprocessed dataset exists
-        unprocessed_exists = self.os.path.isfile(unprocessed_path)
-        if pull or not unprocessed_exists:
+        if pull or not io.exists(self.File.GMAPS_UNPROCESSED):
             print('Attempt extracting Google Maps dataset...')
             self.get_unprocessed_data()
         # Process data
         print('\nProcess raw dataset...')
-        data = self.pd.read_parquet(unprocessed_path, engine="fastparquet")
+        data = io.read_pq(self.File.GMAPS_UNPROCESSED)
         # Convert payload from str into json and explode it (1 row = 1 entity)
         data['payload'] = data['payload'].apply(lambda x: self.json.loads(x))
         data = data.explode('payload')
@@ -42,25 +37,21 @@ class GoogleMaps(object):
                         'types', 'business_status', 'permanently_closed']
         data = data.drop(drop_columns, axis=1)
         data = data.drop_duplicates(subset=['place_id']).reset_index(drop=True)
-        data.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
-        helper.save_as_parquet(data, directory, processed_name, ['place_id'])
+        data.insert(0, 'add_ts', io.now())
+        helper.update_pq(data=data, path=self.File.GMAPS_PROCESSED, dedup=['place_id'])
         print("\nCompleted.")
 
     def get_unprocessed_data(self):
         print('\nExtract Google Maps API data:')
-        helper, utils = self.Helper(), self.Utils()
+        helper, io = self.Helper(), self.IO()
         # List of items
         print("\nExtracting...")
-        path_entities = utils.get_full_path("resource/entities.json")
-        path_epicenters = utils.get_full_path("resource/epicenters.json")
-        epicenters, entities = helper.json_to_df(path_epicenters), helper.json_to_df(path_entities)
+        epicenters, entities = io.json_to_df(self.File.EPICENTERS_LIST), io.json_to_df(self.File.ENTITIES_LIST)
         data = self._cartesian_product_basic(entities, epicenters)
         # Check if exists and remove already processed items
-        directory, name = utils.get_full_path('data/library/gmaps'), 'unprocessed.parquet'
-        path = self.path.join(directory, name)
-        exists = self.os.path.isfile(path)
+        path = self.File.GMAPS_UNPROCESSED
         dedup_columns = ['entity_id', 'epicenter_id']
-        if exists:
+        if io.exists(path):
             print('Excluded already extracted data from a new job.')
             data = self._deduplicate_items(data, path, dedup_columns)
         # Check if anything to work on
@@ -71,9 +62,9 @@ class GoogleMaps(object):
         data.insert(0, 'ts', None)
         data['request'], data['pages'], data['payload'] = None, None, None
         # Get data from Google
-        helper.pause(2)
+        io.pause(2)
         bar = self.tqdm(total=len(data), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        helper.pause()
+        io.pause()
         for index in data.index:
             entry = data.loc[index]
             request = self._request_constructor(query=entry.entity_query,
@@ -90,19 +81,19 @@ class GoogleMaps(object):
                 next_page_token = payload['next_page_token']
                 request = self._request_constructor(token=next_page_token)
                 # "There is a short delay between when a token is issued, and when it will become valid." (c) Google
-                helper.pause(2)
+                io.pause(2)
                 payload = self.requests.get(request).json()
                 results += payload['results']
                 pages += 1
             self.pd.set_option('mode.chained_assignment', None)
-            data['ts'][index] = self.datetime.now().replace(microsecond=0)
+            data['ts'][index] = io.now()
             data['payload'][index] = self.json.dumps(results)
             data['pages'][index] = pages
             data['request'][index] = request
             bar.update(1)
         bar.close()
-        helper.pause()  # Prevents issues with the layout of update messages im terminal
-        helper.save_as_parquet(data, directory, name, dedup_columns)
+        io.pause()  # Prevents issues with the layout of update messages im terminal
+        helper.update_pq(data=data, path=path, dedup=dedup_columns)
         print("\nGoogle Maps API data extraction completed.")
 
     def _request_constructor(self,
@@ -114,8 +105,8 @@ class GoogleMaps(object):
                              entity_type=None,
                              language='en',
                              token=None):
-        helper = self.Helper()
-        api_key = 'key=' + helper.get_api_key('google', 'maps_key')
+        api = self.API()
+        api_key = 'key=' + api.key(service='google', category='maps_key')
         body = 'https://maps.googleapis.com/maps/api/place/textsearch/json?'
         if token:
             pagetoken = 'pagetoken=' + token
@@ -133,7 +124,8 @@ class GoogleMaps(object):
         return body + parameters
 
     def _deduplicate_items(self, data, path, dedup_columns):
-        old = self.pd.read_parquet(path, engine='fastparquet')
+        io = self.IO()
+        old = io.read_pq(path)
         old = old.drop(['ts', 'request', 'pages', 'payload'], axis=1)
         data = self.pd.concat([old, data]) \
             .drop_duplicates(subset=dedup_columns, keep=False) \

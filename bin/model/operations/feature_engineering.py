@@ -6,13 +6,11 @@ class FeatureEngineering(object):
     import re
     import seaborn as sns
 
-    from datetime import datetime
     from dateutil import relativedelta
-    from os import path
-    from pathlib import Path
     from sklearn.cluster import KMeans
 
-    from utils.files import Utils
+    from utils.var import File
+    from utils.io import IO
 
     def broker_gender(self, data):
         print('\tBroker gender...', end=' ', flush=True)
@@ -24,50 +22,55 @@ class FeatureEngineering(object):
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_age(self, data):
+        io = self.IO()
         print('\tBuilding age...', end=' ', flush=True)
         feature_name = 'building_age'
         feature_metadata = {"name": feature_name, "dtype": "continuous", "used": True}
-        year_now = self.datetime.now().replace(microsecond=0).year
+        year_now = io.now().year
         data = data.apply(lambda x: year_now - int(x.build_year) \
             if x.build_year is not None and 1000 <= int(x.build_year) <= year_now else None, axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_new(self, data, threshold=1):
+        io = self.IO()
         print('\tBuilding is new...', end=' ', flush=True)
         feature_name = 'building_is_new'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        year_now = self.datetime.now().replace(microsecond=0).year
+        year_now = io.now().year
         data = data.apply(lambda x: 'true' if x.build_year is not None and year_now - int(x.build_year) <= threshold \
                                               and 1000 <= int(x.build_year) <= year_now else 'false', axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_fresh(self, data, threshold=5):
+        io = self.IO()
         print('\tBuilding is fresh...', end=' ', flush=True)
         feature_name = 'building_is_fresh'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        year_now = self.datetime.now().replace(microsecond=0).year
+        year_now = io.now().year
         data = data.apply(lambda x: 'true' if x.build_year is not None and year_now - int(x.build_year) <= threshold \
                                               and 1000 <= int(x.build_year) <= year_now else 'false', axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_historic(self, data, threshold=80):
+        io = self.IO()
         print('\tBuilding is historic...', end=' ', flush=True)
         feature_name = 'building_is_historic'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        year_now = self.datetime.now().replace(microsecond=0).year
+        year_now = io.now().year
         data = data.apply(lambda x: 'true' if x.build_year is not None and year_now - int(x.build_year) >= threshold \
                                               and 1000 <= int(x.build_year) <= year_now else 'false', axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_century(self, data):
+        io = self.IO()
         print('\tBuilding century...', end=' ', flush=True)
         feature_name = 'building_century'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        year_now = self.datetime.now().replace(microsecond=0).year
+        year_now = io.now().year
         data = data.apply(lambda x: int(x.build_year) // 100 + 1 \
             if x.build_year is not None and 1000 <= int(x.build_year) <= year_now else None, axis=1)
         print('Done.')
@@ -167,7 +170,6 @@ class FeatureEngineering(object):
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def clustering(self, data, n_clusters=50):
-        utils = self.Utils()
         n_clusters = len(data) if n_clusters > len(data) else n_clusters  # n_clusers must be >= n_samples
         print('\tClustering by geodata...', end=' ', flush=True)
         feature_name = 'cluster'
@@ -176,8 +178,7 @@ class FeatureEngineering(object):
         kmeans = self.KMeans(n_clusters=n_clusters, init='k-means++')
         kmeans.fit(data[['lat', 'lng']])  # Compute k-means clustering
         data[['cluster']] = kmeans.fit_predict(data[['lat', 'lng']])
-        directory = utils.get_full_path('data/dataset/reporting')
-        self.plot_clusters(data[['lat', 'lng', 'cluster']], directory=directory)
+        self.plot_clusters(data[['lat', 'lng', 'cluster']], path=self.File.PROPERTY_CLUSTERING_REPORT)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data['cluster']}
 
@@ -219,14 +220,15 @@ class FeatureEngineering(object):
                 district = district_list[0].strip()
                 return district if len(district) > 0 else None
 
-    def plot_clusters(self, data, directory=''):
+    def plot_clusters(self, data, path):
+        io = self.IO()
+        directory, name = io.dir_and_base(path)
         self.sns.set()
         plot = self.sns.scatterplot(x='lat', y='lng', data=data,
                                     hue=data.cluster.tolist(), legend=False, palette='muted')
         self.plt.title('Property Clustering')
         self.plt.xlabel('Latitude')
         self.plt.ylabel('Longitude')
-        path = self.path.join(directory, 'property_clustering.png')
-        self.Path(directory).mkdir(parents=True, exist_ok=True)
+        io.make_dir(directory)
         plot.figure.savefig(path, dpi=900)
         self.plt.close()

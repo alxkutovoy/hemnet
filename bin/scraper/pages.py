@@ -2,21 +2,19 @@ class Pages(object):
 
     import pandas as pd
 
-    from datetime import datetime
     from tqdm import tqdm
 
     from bin.scraper.operations.captcha import Captcha
     from bin.scraper.operations.engine import Engine
-    from bin.helpers.helper import Helper
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
 
     def dataset(self):
-        utils, helper, engine = self.Utils(), self.Helper(), self.Engine()
+        helper, io, engine = self.Helper(), self.IO(), self.Engine()
         helper.metadata_synch()  # Synch sitemap metadata
-        sitemap_path = utils.get_full_path('data/sitemap/sitemap.parquet')
-        pages_directory = utils.get_full_path('data/pages')
-        file_name = 'pages.parquet'
-        sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
+        directory, name = io.dir_and_base(self.File.PAGES)
+        sitemap = io.read_pq(self.File.SITEMAP)
         total, extracted = len(sitemap), (sitemap.extract == True).sum()
         print('\nDownload property pages:',
               f'\nThere are {total} property pages. {extracted} of them are already extracted.')
@@ -27,33 +25,33 @@ class Pages(object):
             return
         # Download pages
         print('\nDownloading pages...')
-        data = self._extract(sitemap, pages_directory)
+        data = self._extract(sitemap, directory)
         # Convert list into a dataframe and add extra columns
         df = self.pd.DataFrame(data)
         df.columns = ['url', 'page']
-        df.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
+        df.insert(0, 'add_ts', io.now())
         # Info
         new = (sitemap.extract == True).sum()
         print(f'Adding {new} new pages. {new + extracted} pages in total. {extracted} were already extracted.')
-        helper.logger(pages_directory, file_name, new + extracted, new, extracted)
+        helper.logger(directory, name, new + extracted, new, extracted)
         # Update sitemap dataset
-        old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
+        old = io.read_pq(self.File.SITEMAP)
         old.update(sitemap)
-        old.to_parquet(path=sitemap_path, compression='gzip', engine="fastparquet")
+        io.save_pq(data=old, path=self.File.SITEMAP)
         print('\nThe sitemap dataset has been successfully updated.')
         # Save into *.parquet file
-        helper.save_as_parquet(data=df, directory=pages_directory, file_name=file_name, dedup_columns=['url'])
+        helper.update_pq(data=df, path=self.File.PAGES, dedup=['url'])
         # End
         print('\nAll pages have been successfully downloaded.')
         engine.shutdown_engine()  # Close Safari
 
     def _extract(self, sitemap, pages_directory):
-        engine, helper = self.Engine(), self.Helper()
+        helper, engine, io = self.Helper(), self.Engine(), self.IO()
         driver = engine.initiate_engine()
-        helper.pause(2)
+        io.pause(2)
         data, total_pages, absent_pages = [], len(sitemap), 0
         bar = self.tqdm(total=total_pages, bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        helper.pause()
+        io.pause()
         for index in sitemap.index:
             entry = sitemap.loc[[index]]
             url = entry.url.item()
@@ -61,20 +59,20 @@ class Pages(object):
             try:
                 data += [[url, self._download(url, driver)]]
                 # Update extract values
-                self._update_metadata(index, sitemap)
+                self._mark(index, sitemap)
             except Exception as e:
                 driver = engine.initiate_engine()  # Restart engine
-                helper.pause(5)
+                io.pause(5)
                 helper.errors(directory=pages_directory, index=index, url=url, error=e)
             bar.update(1)
         bar.close()
-        helper.pause(2)  # Prevents issues with the layout of update messages im terminal
+        io.pause(2)  # Prevents issues with the layout of update messages im terminal
         return data
 
     def _download(self, url, driver):
-        helper, captcha = self.Helper(), self.Captcha()
+        io, captcha = self.IO(), self.Captcha()
         driver.get(url)
-        helper.pause()
+        io.pause()
         content = driver.page_source
         # Fix captcha
         bad_flag = 'captcha'
@@ -84,9 +82,10 @@ class Pages(object):
         if content is not None:
             return content
 
-    def _update_metadata(self, index, sitemap):
+    def _mark(self, index, sitemap):
+        io = self.IO()
         sitemap['extract'][index] = True
-        sitemap['extract_ts'][index] = self.datetime.now().replace(microsecond=0)
+        sitemap['extract_ts'][index] = io.now()
 
 
 if __name__ == '__main__':

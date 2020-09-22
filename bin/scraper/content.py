@@ -2,19 +2,17 @@ class Content(object):
 
     import pandas as pd
 
-    from datetime import datetime
     from tqdm import tqdm
 
-    from bin.helpers.helper import Helper
     from bin.scraper.operations.parser import Parser
-    from utils.files import Utils
+    from utils.helper import Helper
+    from utils.var import File
+    from utils.io import IO
 
     def dataset(self):
-        utils, helper = self.Utils(), self.Helper()
-        helper.metadata_synch()  # Synch sitemap metadata
-        sitemap_path = utils.get_full_path('data/sitemap/sitemap.parquet')
-        content_directory = utils.get_full_path('data/content')
-        sitemap = self.pd.read_parquet(sitemap_path, engine="fastparquet")
+        helper, io = self.Helper(), self.IO()
+        helper.metadata_synch()  # Synchronise sitemap metadata
+        sitemap = io.read_pq(self.File.SITEMAP)
         total, extracted, parsed = len(sitemap), (sitemap.extract == True).sum(), (sitemap.parse == True).sum()
         print('\nExtract content from pages:',
               f'\nThere are {total} property pages. {extracted} of them are extracted and {parsed} are parsed.')
@@ -32,25 +30,23 @@ class Content(object):
             print('\nNo pages were parsed.')
             return
         df.columns = self._columns()
-        df.insert(0, 'add_ts', self.datetime.now().replace(microsecond=0))
+        df.insert(0, 'add_ts', io.now())
         # Update sitemap dataset
-        old = self.pd.read_parquet(sitemap_path, engine="fastparquet")
+        old = io.read_pq(self.File.SITEMAP)
         old.update(sitemap)
-        old.to_parquet(path=sitemap_path, compression='gzip', engine="fastparquet")
+        io.save_pq(data=old, path=self.File.SITEMAP)
         # Save into *.parquet file
-        file_name, dedup_column = 'content.parquet', 'url'
-        helper.save_as_parquet(df, content_directory, file_name, dedup_column)  # Save data into a *.parquet
+        helper.update_pq(data=df, path=self.File.CONTENT, dedup=['url'])  # Save data into a *.parquet
         print('\nThe sitemap dataset has been successfully updated.')
 
     def _extract(self, sitemap):
-        utils, helper = self.Utils(), self.Helper()
+        io = self.IO()
         # Load pages.parquet
-        pages_path = utils.get_full_path('data/pages/pages.parquet')
-        pages = self.pd.read_parquet(pages_path, engine="fastparquet")
-        helper.pause(2)
+        pages = io.read_pq(self.File.PAGES)
+        io.pause(2)
         data, total_pages, parsed_pages = [], len(sitemap), (sitemap.parse == True).sum()
         bar = self.tqdm(total=total_pages-parsed_pages, bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        helper.pause()
+        io.pause()
         for index in sitemap.index:
             entry = sitemap.loc[[index]]
             url = entry.url.item()
@@ -61,9 +57,9 @@ class Content(object):
             # Update extract values
             self.pd.set_option('mode.chained_assignment', None)  # Yeah, I know
             sitemap['parse'][index] = True
-            sitemap['parse_ts'][index] = self.datetime.now().replace(microsecond=0)
+            sitemap['parse_ts'][index] = io.now()
         bar.close()
-        helper.pause()  # Prevents issues with the layout of update messages im terminal
+        io.pause()  # Prevents issues with the layout of update messages im terminal
         return data
 
     def _columns(self):
