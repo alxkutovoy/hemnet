@@ -1,5 +1,6 @@
 class Geo(object):
 
+    from geopy import Nominatim
     from math import sin, cos, sqrt, atan2, radians
 
     def gcs_to_dist(self, point_a, point_b):
@@ -11,3 +12,11 @@ class Geo(object):
         c = 2 * self.atan2(self.sqrt(a), self.sqrt(1 - a))
         distance = r * c * 1000  # Distance in meters
         return distance
+
+    def address_to_gcs(self, street, building, zipcode, city='Stockholm', country='Sweden'):
+        locator = self.Nominatim(user_agent='myGeocoder')
+        address = f'{street} {building}, {zipcode}, {city}, {country}'
+        location = locator.geocode(address)
+        return [location.latitude, location.longitude]
+
+

@@ -63,7 +63,6 @@ class IO(object):
         directory = self.dir(path) if not directory and path else directory
         self.make_dir(directory)
         path = self.path_join(directory, name) if not path else path
-        print(path)
         self.joblib.dump(model, path)
 
     def save_pq(self, data, path=None, directory=None, name=None):

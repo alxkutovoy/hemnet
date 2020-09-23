@@ -2,9 +2,7 @@ class FeatureEngineering(object):
 
     import gender_guesser.detector as gender
     import pandas as pd
-    import matplotlib.pyplot as plt
     import re
-    import seaborn as sns
 
     from dateutil import relativedelta
     from sklearn.cluster import KMeans
@@ -180,19 +178,6 @@ class FeatureEngineering(object):
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
-    def clustering(self, data, n_clusters=50):
-        n_clusters = len(data) if n_clusters > len(data) else n_clusters  # n_clusers must be >= n_samples
-        print('\tClustering by geodata...', end=' ', flush=True)
-        feature_name = 'cluster'
-        feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        data[['lat', 'lng']] = self.pd.DataFrame(data.coordinates.tolist(), index=data.index)
-        kmeans = self.KMeans(n_clusters=n_clusters, init='k-means++')
-        kmeans.fit(data[['lat', 'lng']])  # Compute k-means clustering
-        data[['cluster']] = kmeans.fit_predict(data[['lat', 'lng']])
-        self.plot_clusters(data[['lat', 'lng', 'cluster']], path=self.File.PROPERTY_CLUSTERING_REPORT)
-        print('Done.')
-        return {"name": feature_name, "metadata": feature_metadata, "content": data['cluster']}
-
     # Helpers
 
     def _identify_gender(self, name):
@@ -230,16 +215,3 @@ class FeatureEngineering(object):
             else:
                 district = district_list[0].strip()
                 return district if len(district) > 0 else None
-
-    def plot_clusters(self, data, path):
-        io = self.IO()
-        directory, name = io.dir_and_base(path)
-        self.sns.set()
-        plot = self.sns.scatterplot(x='lat', y='lng', data=data,
-                                    hue=data.cluster.tolist(), legend=False, palette='muted')
-        self.plt.title('Property Clustering')
-        self.plt.xlabel('Latitude')
-        self.plt.ylabel('Longitude')
-        io.make_dir(directory)
-        plot.figure.savefig(path, dpi=900)
-        self.plt.close()

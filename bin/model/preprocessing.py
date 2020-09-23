@@ -33,7 +33,7 @@ class Preprocessing(object):
         self.pd.set_option('mode.chained_assignment', None)
         # Distinct features
         features = [
-            fe.broker_gender(data=data[['broker_full_name']]),
+            # fe.broker_gender(data=data[['broker_full_name']]),
             fe.building_age(data=data[['build_year']]),
             fe.building_century(data=data[['build_year']]),
             fe.building_new(data=data[['build_year']]),
@@ -48,8 +48,7 @@ class Preprocessing(object):
             fe.ground_floor(data=data[['address']]),
             fe.address_street_building(data=data[['gmaps_route', 'gmaps_street_number']]),
             fe.postal_code_area(data=data[['gmaps_postal_code']]),
-            fe.district_clean(data=data[['district']]),
-            fe.clustering(data=data[['coordinates']])
+            fe.district_clean(data=data[['district']])
         ]
         # Series of features
         continuous_count_columns = self.columns_matcher(data=data, pattern=continuous_count)

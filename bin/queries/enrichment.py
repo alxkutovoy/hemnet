@@ -23,11 +23,15 @@ class Enrichment(object):
         # Transport
         transport = io.read_pq(self.File.TRANSPORT)
         transport = transport.drop(['coordinates'], axis=1)
+        # Clusters
+        clusters = io.read_pq(self.File.CLUSTERS)
+        clusters = clusters.drop(['coordinates', 'lat', 'lng'], axis=1)
         # Join
         data = self.pd.merge(data, destinations, how='left', on=['url'])    # Add destinations
         data = self.pd.merge(data, entities, how='left', on=['url'])        # Add entities
         data = self.pd.merge(data, addresses, how='left', on=['url'])       # Add addresses
         data = self.pd.merge(data, transport, how='left', on=['url'])       # Add transport
+        data = self.pd.merge(data, clusters, how='left', on=['url'])        # Add transport
         # Save
         if len(data) == len(destinations) == len(entities) == len(transport) == len(addresses):
             helper.update_pq(data=data, path=self.File.ENRICHED_SUBSET, dedup=['url'])
