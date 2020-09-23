@@ -17,21 +17,25 @@ class Enrichment(object):
         # Entities
         entities = io.read_pq(self.File.ENTITIES)
         entities = entities.drop(['coordinates'], axis=1)
+        # Addresses
+        addresses = io.read_pq(self.File.ADDRESSES)
+        addresses = addresses.drop(['gmaps_query', 'gmaps_raw_response'], axis=1)
         # Transport
         transport = io.read_pq(self.File.TRANSPORT)
         transport = transport.drop(['coordinates'], axis=1)
         # Join
         data = self.pd.merge(data, destinations, how='left', on=['url'])    # Add destinations
         data = self.pd.merge(data, entities, how='left', on=['url'])        # Add entities
+        data = self.pd.merge(data, addresses, how='left', on=['url'])       # Add addresses
         data = self.pd.merge(data, transport, how='left', on=['url'])       # Add transport
         # Save
-        if len(data) == len(destinations) == len(entities) == len(transport):
+        if len(data) == len(destinations) == len(entities) == len(transport) == len(addresses):
             helper.update_pq(data=data, path=self.File.ENRICHED_SUBSET, dedup=['url'])
             print("\nCompleted.")
         else:
             print(f'\nSorry, something went wrong. Lengths of enriched datasets are not matching:'
                   f'\nSubset: {len(data)}. Destinations: {len(destinations)}. Entities: {len(entities)}.'
-                  f'Transport: {len(transport)}.')
+                  f'Transport: {len(transport)}. Addresses: {len(addresses)}.')
 
 
 if __name__ == '__main__':

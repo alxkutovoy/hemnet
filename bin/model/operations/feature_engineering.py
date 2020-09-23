@@ -12,6 +12,8 @@ class FeatureEngineering(object):
     from utils.var import File
     from utils.io import IO
 
+    # TODO: Add BRF via geopy library and address
+
     def broker_gender(self, data):
         print('\tBroker gender...', end=' ', flush=True)
         feature_name = 'broker_gender'
@@ -155,8 +157,17 @@ class FeatureEngineering(object):
         print('\tStreet and building number...', end=' ', flush=True)
         feature_name = 'address_street_building'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        output = data.apply(lambda x: str(x.street) + ' ' + self._building_number(str(x.address)) \
-            if x.address is not None and x.street is not None else None, axis=1)
+        output = data.apply(lambda x: str(x.gmaps_route) + ' ' + str(x.gmaps_street_number) \
+            if x.gmaps_route is not None and x.gmaps_street_number is not None else None, axis=1)
+        print('Done.')
+        return {"name": feature_name, "metadata": feature_metadata, "content": output}
+
+    def postal_code_area(self, data):
+        print('\tPostal code area...', end=' ', flush=True)
+        feature_name = 'postal_code_area'
+        feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
+        output = data.apply(lambda x: str(x.gmaps_postal_code)[:3] \
+            if x.gmaps_postal_code is not None and len(x.gmaps_postal_code) == 6 else None, axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": output}
 
@@ -210,7 +221,7 @@ class FeatureEngineering(object):
 
     def _district_parser(self, district):
         separators = [',', '/', '-']
-        district = district.replace('Stockholm,', '').replace('Stockholm', '')
+        district = district.replace('Stockholm - inom tullarna,', '').replace('Stockholm,', '').replace('Stockholm', '')
         for i in separators:
             district_list = district.split(i)
             if len(district_list) == 0:

@@ -147,7 +147,7 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_coordinates(self, content):
+    def get_coordinates(self, content):  # TODO: Extract as a dict
         raw = self._soup(content).find("div", {"class": "property-map"})
         try:
             coordinates_parsed = self.re.search('\[(.*)\]', str(raw))

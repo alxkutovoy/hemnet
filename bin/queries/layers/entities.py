@@ -9,17 +9,20 @@ class Entities(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def entities(self):
+    def entities(self, request=None):
         print('\nEnrich dataset with Google Maps entities features:')
         helper, io, geo = self.Helper(), self.IO(), self.Geo()
         # Get raw property data
-        data = helper.remove_duplicates(self.File.SUBSET, self.File.ENTITIES, ['url', 'coordinates'], ['url'])
+        if request is None:
+            data = helper.remove_duplicates(self.File.SUBSET, self.File.ENTITIES, ['url', 'coordinates'], ['url'])
+        else:
+            data = request
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
             return
         # Get Google Maps data
-        gmaps = io.read_pq(self.File.GMAPS_PROCESSED)
+        gmaps = io.read_pq(self.File.ENTITIES_PROCESSED)
         entities_types = list(gmaps.entity_category.unique())  # A list of entity types
         # Enrich with entities data
         print('\nCalculating features...')
@@ -45,7 +48,10 @@ class Entities(object):
         bar.close()
         io.pause()  # Prevents issues with the layout of update messages im terminal
         # Save
-        helper.update_pq(data=data, path=self.File.ENTITIES, dedup=['url'])
+        if request is None:
+            helper.update_pq(data=data, path=self.File.ENTITIES, dedup=['url'])
+        else:
+            return data
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, gmaps, category):
