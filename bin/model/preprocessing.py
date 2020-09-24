@@ -22,8 +22,7 @@ class Preprocessing(object):
         continuous_distance = ['distance_to_', 'nearest_', ]
         continuous_scores = ['scores_mean_', 'scores_median_']
         continuous_reviews = ['reviews_mean_', 'reviews_median_']
-        continuous_other = ['gmaps_lattitude', 'gmaps_longitude']
-        continuous = continuous_count + continuous_distance + continuous_scores + continuous_reviews + continuous_other
+        continuous = continuous_count + continuous_distance + continuous_scores + continuous_reviews
         engineered_columns = self.columns_matcher(data=data, pattern=continuous)
         for column in engineered_columns:
             metadata = metadata.append(self.map_dtype(name=str(column), continuous=continuous,
