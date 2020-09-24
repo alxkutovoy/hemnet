@@ -1,5 +1,6 @@
 class IO(object):
 
+    import csv
     import joblib
     import json
     import os
@@ -78,6 +79,19 @@ class IO(object):
         with open(path, 'w') as f:
             self.json.dump(data, f)
         f.close()
+
+    def read_csv(self, path, delimiter=';'):
+        return self.pd.read_csv(path, delimiter=delimiter)
+
+    def create_csv(self, path, header, delimiter=';'):
+        with open(path, 'w') as file:
+            writer = self.csv.writer(file, delimiter=delimiter)
+            writer.writerow(header)
+
+    def append_csv(self, path, fields, delimiter=';'):
+        with open(path, 'a') as file:
+            writer = self.csv.writer(file, delimiter=delimiter)
+            writer.writerow(fields)
 
     # Conversions
 

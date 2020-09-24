@@ -40,6 +40,9 @@ class File(object):
     # Points
     POINTS = io.abs_path('res/lib/points.json')
 
+    # Boolean threshold values
+    BOOLEAN_THRESHOLDS = io.abs_path('res/lib/boolean_threshold.csv')
+
     # Google Maps Entities
     ENTITIES_LIST = io.path_join(Dir.GMAPS, 'entities.json')
     EPICENTERS_LIST = io.path_join(Dir.GMAPS, 'epicenters.json')

@@ -1,5 +1,6 @@
 class FeatureEngineering(object):
 
+    import csv
     import gender_guesser.detector as gender
     import pandas as pd
     import re
@@ -77,13 +78,29 @@ class FeatureEngineering(object):
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def threshold(self, data, threshold_number=None, threshold_quantile=0.05):
+        io = self.IO()
+        BOOLEAN_THRESHOLDS = self.File.BOOLEAN_THRESHOLDS
         column_name = data.columns[0]
-        threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
-        # print(f'\tBoolean for {column_name} (threshold = {round(threshold,1)})...', end=' ', flush=True)
         feature_name = column_name + '_boolean'
+        if io.exists(BOOLEAN_THRESHOLDS):
+            threshold_library = io.read_csv(path=BOOLEAN_THRESHOLDS)
+            if column_name in list(threshold_library.name):
+                threshold = threshold_library.query("name == @column_name")['value'].iloc[0]
+                expected = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+                if threshold != expected:
+                    threshold = expected
+                    threshold_library = threshold_library[threshold_library.name != column_name]
+                    threshold_library.to_csv(path_or_buf=BOOLEAN_THRESHOLDS, sep=';', index=False, header=True)
+                    io.append_csv(path=BOOLEAN_THRESHOLDS, fields=[column_name, expected])
+            else:
+                threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+                io.append_csv(BOOLEAN_THRESHOLDS, [column_name, threshold])
+        else:
+            threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+            io.create_csv(path=BOOLEAN_THRESHOLDS, header=['name', 'value'])
+            io.append_csv(path=BOOLEAN_THRESHOLDS, fields=[column_name, threshold])
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
         data = data.apply(lambda x: 'true' if x[column_name] > threshold else 'false', axis=1)
-        # print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def year(self, data, name):
