@@ -10,11 +10,14 @@ class Transport(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def transport(self):
+    def transport(self, request=None):
         print('\nEnrich dataset with Stockholm public transportation features:')
         helper, io = self.Helper(), self.IO()
         # Get raw property data
-        data = helper.remove_duplicates(self.File.SUBSET, self.File.TRANSPORT, ['url', 'coordinates'], ['url'])
+        if request is None:
+            data = helper.remove_duplicates(self.File.SUBSET, self.File.TRANSPORT, ['url', 'coordinates'], ['url'])
+        else:
+            data = request
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
@@ -44,7 +47,10 @@ class Transport(object):
         bar.close()
         io.pause()  # Prevents issues with the layout of update messages im terminal
         # Save
-        helper.update_pq(data=data, path=self.File.TRANSPORT, dedup=['url'])
+        if request is None:
+            helper.update_pq(data=data, path=self.File.TRANSPORT, dedup=['url'])
+        else:
+            return data
         print("\nCompleted.")
 
     def _generate_distance_features(self, index, data, distance, transport, category):

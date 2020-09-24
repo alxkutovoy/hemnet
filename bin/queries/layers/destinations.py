@@ -8,11 +8,14 @@ class Destinations(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def destinations(self):
+    def destinations(self, request=None):
         print('\nEnrich dataset with destinations to strategic points features:')
         helper, io, geo = self.Helper(), self.IO(), self.Geo()
         # Get raw property data
-        data = helper.remove_duplicates(self.File.SUBSET, self.File.DESTINATIONS, ['url', 'coordinates'], ['url'])
+        if request is None:
+            data = helper.remove_duplicates(self.File.SUBSET, self.File.DESTINATIONS, ['url', 'coordinates'], ['url'])
+        else:
+            data = request
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
@@ -28,7 +31,10 @@ class Destinations(object):
             point_coordinates = [point['point_lat'], point['point_lng']]
             data[column_name] = data.apply(lambda x: geo.gcs_to_dist(x.coordinates, point_coordinates), axis=1)
         # Save
-        helper.update_pq(data=data, path=self.File.DESTINATIONS, dedup=['url'])
+        if request is None:
+            helper.update_pq(data=data, path=self.File.DESTINATIONS, dedup=['url'])
+        else:
+            return data
         print("\nCompleted.")
 
 

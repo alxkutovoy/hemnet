@@ -4,11 +4,13 @@ class Pipeline(object):
     from bin.scraper.pages import Pages
     from bin.scraper.content import Content
 
-    from bin.features.data import Data
-    from bin.features.entities import Entities
-    from bin.features.transport import Transport
-    from bin.features.destinations import Destinations
-    from bin.features.enrichment import Enrichment
+    from bin.queries.data import Data
+    from bin.queries.layers.entities import Entities
+    from bin.queries.layers.address import Address
+    from bin.queries.layers.transport import Transport
+    from bin.queries.layers.destinations import Destinations
+    from bin.queries.layers.clustering import Clustering
+    from bin.queries.enrichment import Enrichment
 
     from bin.model.eda import EDA
     from bin.model.preprocessing import Preprocessing
@@ -18,7 +20,7 @@ class Pipeline(object):
 
     def run_pipeline(self):
         self.run_scraper()
-        self.run_features()
+        self.run_queries()
         self.run_model()
 
     # Data scraping
@@ -30,11 +32,13 @@ class Pipeline(object):
 
     # Enrichment layer
 
-    def run_features(self):
+    def run_queries(self):
         self.Data().generate_dataset()
         self.Entities().entities()
+        self.Address().address()
         self.Transport().transport()
         self.Destinations().destinations()
+        self.Clustering().clustering(retrain=True)
         self.Enrichment().data()
 
     # Modeling

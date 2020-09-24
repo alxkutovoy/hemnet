@@ -80,25 +80,25 @@ class Helper(object):
             self.logger(directory, file_name, total, new)
             print(f'Creating {len(data.index)} new rows.')
 
-    def remove_duplicates(self, original_path, target_path, columns, dedup_columns):
+    def remove_duplicates(self, original_path, target_path, select, dedup):
         io = self.IO()
-        entities_exists = io.exists(target_path)
-        if entities_exists:
-            if columns:
-                new = io.read_pq(original_path)[columns]
-                old = io.read_pq(target_path)[columns]
+        exists = io.exists(target_path)
+        if exists:
+            if select:
+                new = io.read_pq(original_path)[select]
+                old = io.read_pq(target_path)[select]
             else:
                 new = io.read_pq(original_path)
                 old = io.read_pq(target_path)
             data = self.pd.concat([old, new]) \
-                .drop_duplicates(subset=dedup_columns, keep=False) \
+                .drop_duplicates(subset=dedup, keep=False) \
                 .reset_index(drop=True)
             print(f'Dataset exists and contains {len(old)} rows. Adding {len(data)} new rows.')
         else:
-            if columns:
-                data = io.read_pq(original_path)[columns]
+            if select:
+                data = io.read_pq(original_path)[select]
             else:
-                data = io.read_pq(original_path)[columns]
+                data = io.read_pq(original_path)[select]
             print(f'Dataset does not exists yet. Extracting {len(data)} new rows.')
         return data
 

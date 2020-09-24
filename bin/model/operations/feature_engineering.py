@@ -1,16 +1,17 @@
 class FeatureEngineering(object):
 
+    import csv
     import gender_guesser.detector as gender
     import pandas as pd
-    import matplotlib.pyplot as plt
     import re
-    import seaborn as sns
 
     from dateutil import relativedelta
     from sklearn.cluster import KMeans
 
     from utils.var import File
     from utils.io import IO
+
+    # TODO: Add BRF via geopy library and address
 
     def broker_gender(self, data):
         print('\tBroker gender...', end=' ', flush=True)
@@ -77,13 +78,29 @@ class FeatureEngineering(object):
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def threshold(self, data, threshold_number=None, threshold_quantile=0.05):
+        io = self.IO()
+        BOOLEAN_THRESHOLDS = self.File.BOOLEAN_THRESHOLDS
         column_name = data.columns[0]
-        threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
-        # print(f'\tBoolean for {column_name} (threshold = {round(threshold,1)})...', end=' ', flush=True)
         feature_name = column_name + '_boolean'
+        if io.exists(BOOLEAN_THRESHOLDS):
+            threshold_library = io.read_csv(path=BOOLEAN_THRESHOLDS)
+            if column_name in list(threshold_library.name):
+                threshold = threshold_library.query("name == @column_name")['value'].iloc[0]
+                expected = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+                if threshold != expected:
+                    threshold = expected
+                    threshold_library = threshold_library[threshold_library.name != column_name]
+                    threshold_library.to_csv(path_or_buf=BOOLEAN_THRESHOLDS, sep=';', index=False, header=True)
+                    io.append_csv(path=BOOLEAN_THRESHOLDS, fields=[column_name, expected])
+            else:
+                threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+                io.append_csv(BOOLEAN_THRESHOLDS, [column_name, threshold])
+        else:
+            threshold = threshold_number if threshold_number is not None else data.quantile(threshold_quantile)[0]
+            io.create_csv(path=BOOLEAN_THRESHOLDS, header=['name', 'value'])
+            io.append_csv(path=BOOLEAN_THRESHOLDS, fields=[column_name, threshold])
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
         data = data.apply(lambda x: 'true' if x[column_name] > threshold else 'false', axis=1)
-        # print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def year(self, data, name):
@@ -155,8 +172,17 @@ class FeatureEngineering(object):
         print('\tStreet and building number...', end=' ', flush=True)
         feature_name = 'address_street_building'
         feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        output = data.apply(lambda x: str(x.street) + ' ' + self._building_number(str(x.address)) \
-            if x.address is not None and x.street is not None else None, axis=1)
+        output = data.apply(lambda x: str(x.gmaps_route) + ' ' + str(x.gmaps_street_number) \
+            if x.gmaps_route is not None and x.gmaps_street_number is not None else None, axis=1)
+        print('Done.')
+        return {"name": feature_name, "metadata": feature_metadata, "content": output}
+
+    def postal_code_area(self, data):
+        print('\tPostal code area...', end=' ', flush=True)
+        feature_name = 'postal_code_area'
+        feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
+        output = data.apply(lambda x: str(x.gmaps_postal_code)[:3] \
+            if x.gmaps_postal_code is not None and len(x.gmaps_postal_code) == 6 else None, axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": output}
 
@@ -168,19 +194,6 @@ class FeatureEngineering(object):
             if x.district is not None else None, axis=1)
         print('Done.')
         return {"name": feature_name, "metadata": feature_metadata, "content": data}
-
-    def clustering(self, data, n_clusters=50):
-        n_clusters = len(data) if n_clusters > len(data) else n_clusters  # n_clusers must be >= n_samples
-        print('\tClustering by geodata...', end=' ', flush=True)
-        feature_name = 'cluster'
-        feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        data[['lat', 'lng']] = self.pd.DataFrame(data.coordinates.tolist(), index=data.index)
-        kmeans = self.KMeans(n_clusters=n_clusters, init='k-means++')
-        kmeans.fit(data[['lat', 'lng']])  # Compute k-means clustering
-        data[['cluster']] = kmeans.fit_predict(data[['lat', 'lng']])
-        self.plot_clusters(data[['lat', 'lng', 'cluster']], path=self.File.PROPERTY_CLUSTERING_REPORT)
-        print('Done.')
-        return {"name": feature_name, "metadata": feature_metadata, "content": data['cluster']}
 
     # Helpers
 
@@ -210,7 +223,7 @@ class FeatureEngineering(object):
 
     def _district_parser(self, district):
         separators = [',', '/', '-']
-        district = district.replace('Stockholm,', '').replace('Stockholm', '')
+        district = district.replace('Stockholm - inom tullarna,', '').replace('Stockholm,', '').replace('Stockholm', '')
         for i in separators:
             district_list = district.split(i)
             if len(district_list) == 0:
@@ -219,16 +232,3 @@ class FeatureEngineering(object):
             else:
                 district = district_list[0].strip()
                 return district if len(district) > 0 else None
-
-    def plot_clusters(self, data, path):
-        io = self.IO()
-        directory, name = io.dir_and_base(path)
-        self.sns.set()
-        plot = self.sns.scatterplot(x='lat', y='lng', data=data,
-                                    hue=data.cluster.tolist(), legend=False, palette='muted')
-        self.plt.title('Property Clustering')
-        self.plt.xlabel('Latitude')
-        self.plt.ylabel('Longitude')
-        io.make_dir(directory)
-        plot.figure.savefig(path, dpi=900)
-        self.plt.close()

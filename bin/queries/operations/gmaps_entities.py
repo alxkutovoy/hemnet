@@ -1,4 +1,4 @@
-class GoogleMaps(object):
+class GoogleMapsEntities(object):
 
     import json
     import pandas as pd
@@ -15,12 +15,12 @@ class GoogleMaps(object):
         print('\nProcessing Google Maps API data:')
         helper, io = self.Helper(), self.IO()
         # Check if unprocessed dataset exists
-        if pull or not io.exists(self.File.GMAPS_UNPROCESSED):
+        if pull or not io.exists(self.File.ENTITIES_UNPROCESSED):
             print('Attempt extracting Google Maps dataset...')
             self.get_unprocessed_data()
         # Process data
         print('\nProcess raw dataset...')
-        data = io.read_pq(self.File.GMAPS_UNPROCESSED)
+        data = io.read_pq(self.File.ENTITIES_UNPROCESSED)
         # Convert payload from str into json and explode it (1 row = 1 entity)
         data['payload'] = data['payload'].apply(lambda x: self.json.loads(x))
         data = data.explode('payload')
@@ -38,7 +38,7 @@ class GoogleMaps(object):
         data = data.drop(drop_columns, axis=1)
         data = data.drop_duplicates(subset=['place_id']).reset_index(drop=True)
         data.insert(0, 'add_ts', io.now())
-        helper.update_pq(data=data, path=self.File.GMAPS_PROCESSED, dedup=['place_id'])
+        helper.update_pq(data=data, path=self.File.ENTITIES_PROCESSED, dedup=['place_id'])
         print("\nCompleted.")
 
     def get_unprocessed_data(self):
@@ -49,7 +49,7 @@ class GoogleMaps(object):
         epicenters, entities = io.json_to_df(self.File.EPICENTERS_LIST), io.json_to_df(self.File.ENTITIES_LIST)
         data = self._cartesian_product_basic(entities, epicenters)
         # Check if exists and remove already processed items
-        path = self.File.GMAPS_UNPROCESSED
+        path = self.File.ENTITIES_UNPROCESSED
         dedup_columns = ['entity_id', 'epicenter_id']
         if io.exists(path):
             print('Excluded already extracted data from a new job.')
@@ -137,4 +137,4 @@ class GoogleMaps(object):
 
 
 if __name__ == '__main__':
-    GoogleMaps().get_processed_data()
+    GoogleMapsEntities().get_processed_data()

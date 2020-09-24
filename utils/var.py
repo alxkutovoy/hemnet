@@ -40,11 +40,14 @@ class File(object):
     # Points
     POINTS = io.abs_path('res/lib/points.json')
 
-    # Google Maps
+    # Boolean threshold values
+    BOOLEAN_THRESHOLDS = io.abs_path('res/lib/boolean_threshold.csv')
+
+    # Google Maps Entities
     ENTITIES_LIST = io.path_join(Dir.GMAPS, 'entities.json')
     EPICENTERS_LIST = io.path_join(Dir.GMAPS, 'epicenters.json')
-    GMAPS_UNPROCESSED = io.path_join(Dir.GMAPS,  'unprocessed.parquet')
-    GMAPS_PROCESSED = io.path_join(Dir.GMAPS, 'processed.parquet')
+    ENTITIES_UNPROCESSED = io.path_join(Dir.GMAPS, 'unprocessed.parquet')
+    ENTITIES_PROCESSED = io.path_join(Dir.GMAPS, 'processed.parquet')
 
     # Public transportation
     SL_STOPS = io.path_join(Dir.PUBLIC_TRANSPORT, 'stops.json')
@@ -55,6 +58,8 @@ class File(object):
     DESTINATIONS = io.path_join(Dir.ENRICHED, 'layers/destinations.parquet')
     ENTITIES = io.path_join(Dir.ENRICHED, 'layers/entities.parquet')
     TRANSPORT = io.path_join(Dir.ENRICHED, 'layers/transport.parquet')
+    ADDRESSES = io.path_join(Dir.ENRICHED, 'layers/address.parquet')
+    CLUSTERS = io.path_join(Dir.ENRICHED, 'layers/clusters.parquet')
 
     # Enriched subset
     ENRICHED_SUBSET = io.path_join(Dir.ENRICHED, 'data.parquet')
@@ -81,6 +86,7 @@ class File(object):
 
     # Model
     MODEL = io.abs_path('res/model/model.pkl')
+    KMEANS = io.abs_path('res/model/kmeans.pkl')
 
     # Reports and illustrations
     PROPERTY_CLUSTERING_REPORT = io.abs_path('res/report/property_clustering.png')

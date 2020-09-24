@@ -23,10 +23,10 @@ class Preprocessing(object):
         continuous_scores = ['scores_mean_', 'scores_median_']
         continuous_reviews = ['reviews_mean_', 'reviews_median_']
         continuous = continuous_count + continuous_distance + continuous_scores + continuous_reviews
-        engineered_columns = self._columns_matcher(data=data, pattern=continuous)
+        engineered_columns = self.columns_matcher(data=data, pattern=continuous)
         for column in engineered_columns:
-            metadata = metadata.append(self._map_dtype(name=str(column), continuous=continuous,
-                                                       exceptions=metadata['name']), ignore_index=True)
+            metadata = metadata.append(self.map_dtype(name=str(column), continuous=continuous,
+                                                      exceptions=metadata['name']), ignore_index=True)
         # Feature engineering
         print('\nFeature engineering:')
         self.pd.set_option('mode.chained_assignment', None)
@@ -45,14 +45,14 @@ class Preprocessing(object):
             fe.weekend(data=data[[ts_column]], name='sold'),
             fe.floor_number(data=data[['address']]),
             fe.ground_floor(data=data[['address']]),
-            fe.address_street_building(data=data[['address', 'street']]),
-            fe.district_clean(data=data[['district']]),
-            fe.clustering(data=data[['coordinates']])
+            fe.address_street_building(data=data[['gmaps_route', 'gmaps_street_number']]),
+            fe.postal_code_area(data=data[['gmaps_postal_code']]),
+            fe.district_clean(data=data[['district']])
         ]
         # Series of features
-        continuous_count_columns = self._columns_matcher(data=data, pattern=continuous_count)
+        continuous_count_columns = self.columns_matcher(data=data, pattern=continuous_count)
         print(f'\tBooleans for {len(continuous_count_columns)} columns...', end=' ', flush=True)
-        for column in self._columns_matcher(data=data, pattern=continuous_count):
+        for column in self.columns_matcher(data=data, pattern=continuous_count):
             features += [fe.threshold(data[[column]])]
         print('Done.')
         # Extend metadata
@@ -62,10 +62,10 @@ class Preprocessing(object):
         # Data processing
         print('\nData preprocessing:')
         # Filter values and groom columns
-        data = self._groom_dtype(data=data,
-                                 dtypes=dict(zip(metadata.name, metadata.dtype)),
-                                 exceptions=[ts_column],
-                                 target_column=target_column)
+        data = self.groom_dtype(data=data,
+                                dtypes=dict(zip(metadata.name, metadata.dtype)),
+                                exceptions=[ts_column],
+                                target_column=target_column)
         # Split into train, validation and test sets
         datasets = self._create_partitions(data=data, ts_column=ts_column)
         train_data, validation_data, test_data = [datasets[x] for x in ['train', 'test', 'oot']]
@@ -108,14 +108,14 @@ class Preprocessing(object):
         print('Done.')
         return datasets
 
-    def _groom_dtype(self, data, dtypes, missing_category=False, exceptions=None, target_column=None):
+    def groom_dtype(self, data, dtypes, missing_category=False, exceptions=None, target_column=None):
         print('\tFilter values and groom columns...', end=' ', flush=True)
         replace_values = [None, '']
         for feature, value in dtypes.items():
             if exceptions is not None and feature in exceptions:
                 continue
             # Convert lists into strings
-            if type(data[feature].iloc[0]) == list:
+            if feature in data.columns and type(data[feature].iloc[0]) == list:
                 data[feature] = data[feature].str.join(' ')
             # Normalise target variable
             if feature == target_column:
@@ -170,10 +170,10 @@ class Preprocessing(object):
         io.save_pq(data=self.pd.DataFrame(y), path=io.path_join(directory, y_name))
         io.save_pq(data=e, path=io.path_join(directory, e_name))
 
-    def _columns_matcher(self, data, pattern):
+    def columns_matcher(self, data, pattern):
         return [i for i in list(data.columns) if any(i for j in pattern if str(j) in i)]
 
-    def _map_dtype(self, name, continuous=None, categorical=None, exceptions=None):
+    def map_dtype(self, name, continuous=None, categorical=None, exceptions=None):
         if exceptions is not None and exceptions.str.contains(name).any():
             return
         if self._contains(name, continuous):
