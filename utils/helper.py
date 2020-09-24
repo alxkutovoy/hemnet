@@ -84,12 +84,8 @@ class Helper(object):
         io = self.IO()
         exists = io.exists(target_path)
         if exists:
-            if select:
-                new = io.read_pq(original_path)[select]
-                old = io.read_pq(target_path)[select]
-            else:
-                new = io.read_pq(original_path)
-                old = io.read_pq(target_path)
+            new = io.read_pq(original_path)[select] if select else io.read_pq(original_path)
+            old = io.read_pq(target_path)[dedup]
             data = self.pd.concat([old, new]) \
                 .drop_duplicates(subset=dedup, keep=False) \
                 .reset_index(drop=True)
