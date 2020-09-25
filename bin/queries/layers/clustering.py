@@ -1,8 +1,8 @@
 class Clustering(object):
 
-    import matplotlib.pyplot as plt
     import pandas as pd
-    import pickle
+    import matplotlib.pyplot as plt
+    import joblib
     import seaborn as sns
 
     from bin.queries.operations.kmeans import KMeans
@@ -12,38 +12,41 @@ class Clustering(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def clustering(self, n_clusters=100, request=None, retrain=None):
+    def clustering(self, n_clusters=100, retrain=None):
         print('\nEnrich dataset with clustering based on geographical coordinates of properties:')
         helper, io, geo = self.Helper(), self.IO(), self.Geo()
         # Get raw property data
-        if not request:
-            data = helper.remove_duplicates(self.File.SUBSET, self.File.CLUSTERS, ['url', 'coordinates'], ['url'])
-        else:
-            data = request
+        data = helper.remove_duplicates(original_path=self.File.SUBSET,
+                                        target_path=self.File.CLUSTERS,
+                                        select=['url', 'latitude', 'longitude'],
+                                        dedup=['url'])
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
             return
         # Assign clusters
-        if not request and (retrain or not io.exists(self.File.KMEANS)):
-            data[['lat', 'lng']] = self.pd.DataFrame(data.coordinates.tolist(), index=data.index)
+        if retrain or not io.exists(self.File.KMEANS):
+            data = data[['latitude', 'longitude', 'url']]
             self.KMeans().kmeans(data=data, n_clusters=n_clusters)
-        model = self.pickle.load(open(self.File.KMEANS, 'rb'))
-        data[['cluster']] = model.fit_predict(data[['lat', 'lng']])
-        if not request:
-            self._plot_clusters(data[['lat', 'lng', 'cluster']], path=self.File.PROPERTY_CLUSTERING_REPORT)
+        model = self.joblib.load(open(self.File.KMEANS, 'rb'))
+        data[['cluster']] = model.predict(data[['latitude', 'longitude']])
+        self._plot_clusters(data[['latitude', 'longitude', 'cluster']], path=self.File.PROPERTY_CLUSTERING_REPORT)
         # Save
-        if not request:
-            helper.update_pq(data=data, path=self.File.CLUSTERS, dedup=['url'])
-        else:
-            return data
+        helper.update_pq(data=data, path=self.File.CLUSTERS, dedup=['url'])
         print("\nCompleted.")
+
+    def request_clustering(self, request):
+        self.pd.options.mode.chained_assignment = None
+        original_columns = list(request.columns)
+        model = self.joblib.load(open(self.File.KMEANS, 'rb'))
+        request[['cluster']] = model.predict(request)
+        return request.drop(columns=original_columns, axis=1)
 
     def _plot_clusters(self, data, path):
         io = self.IO()
         directory, name = io.dir_and_base(path)
         self.sns.set()
-        plot = self.sns.scatterplot(x='lat', y='lng', data=data,
+        plot = self.sns.scatterplot(x='latitude', y='longitude', data=data,
                                     hue=data.cluster.tolist(), legend=False, palette='muted')
         self.plt.title('Property Clustering')
         self.plt.xlabel('Latitude')

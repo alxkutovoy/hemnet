@@ -66,8 +66,9 @@ class Content(object):
         return [
             "hemnet_ts", "property_id", "sold_property_id", "sold_at_date", "property_type", "ownership_type",
             "country", "region", "urban_area", "municipality", "location", "city", "district", "neighborhood",
-            "address", "street", "coordinates", "start_price", "end_price", "price_sqm", "rums", "area", "utils",
-            "build_year", "broker_full_name", "broker_agency_id", "broker_agency", "broker_phone", "broker_email", "url"
+            "address", "street", "latitude", "longitude", "start_price", "end_price", "price_sqm", "rums", "area",
+            "utils",  "build_year", "broker_full_name", "broker_agency_id", "broker_agency", "broker_phone",
+            "broker_email", "url"
         ]
 
     def _parser(self, content, url):
@@ -88,7 +89,8 @@ class Content(object):
                 parser.get_neighborhood(content),
                 parser.get_address(content),
                 parser.get_street(content),
-                parser.get_coordinates(content),
+                parser.get_latitude(content),
+                parser.get_longitude(content),
                 parser.get_start_price(content),
                 parser.get_end_price(content),
                 parser.get_price_sqm(content),

@@ -11,15 +11,14 @@ class Address(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def address(self, request=None):
+    def address(self):
         print('\nEnrich dataset with formatted address data supplied by Google Maps:')
         helper, io, geo = self.Helper(), self.IO(), self.Geo()
         # Get raw property data
-        if request is None:
-            data = helper.remove_duplicates(original_path=self.File.SUBSET, target_path=self.File.ADDRESSES,
-                                            select=['url', 'address', 'city', 'country', 'coordinates'], dedup=['url'])
-        else:
-            data = request
+        data = helper.remove_duplicates(original_path=self.File.SUBSET,
+                                        target_path=self.File.ADDRESSES,
+                                        select=['url', 'address', 'city', 'country'],
+                                        dedup=['url'])
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
@@ -47,11 +46,17 @@ class Address(object):
         # Save
         output = self.pd.DataFrame(output).add_prefix('gmaps_')
         output = output.rename(columns={"gmaps_url": "url"}, errors="raise")
-        if request is None:
-            helper.update_pq(data=output, path=self.File.ADDRESSES, dedup=['url'])
-        else:
-            return data
+        helper.update_pq(data=output, path=self.File.ADDRESSES, dedup=['url'])
         print("\nCompleted.")
+
+    def request_address(self, request):
+        api_key = self.API().key(service='google', category='maps_key')
+        gmaps = self.GoogleMaps(api_key)
+        query = request.gmaps_address_request.item()
+        raw_response = gmaps.geocode(query)
+        parsed_response = self._geocoding_parser(raw_response) if raw_response else {}
+        output = self.pd.DataFrame([parsed_response]).add_prefix('gmaps_') if parsed_response else None
+        return output
 
     def _get_query(self, entry):
         address = entry.address.item().split(',')[0]
@@ -65,11 +70,11 @@ class Address(object):
         for i in response[0]['address_components']:
             type_name = i['types'][0]
             long_name = i['long_name']
-            if type_name in ['gmaps_street_number', 'gmaps_route', 'gmaps_political', 'gmaps_postal_town',
-                             'gmaps_administrative_area_level_1', 'gmaps_country', 'gmaps_postal_code']:
+            if type_name in ['street_number', 'route', 'political', 'postal_town', 'administrative_area_level_1',
+                             'country', 'postal_code']:
                 elements[type_name] = long_name
         elements['formatted_address'] = response[0]['formatted_address']
-        elements['lattitude'] = response[0]['geometry']['location']['lat']
+        elements['latitude'] = response[0]['geometry']['location']['lat']
         elements['longitude'] = response[0]['geometry']['location']['lng']
         elements['place_id'] = response[0]['place_id']
         return elements

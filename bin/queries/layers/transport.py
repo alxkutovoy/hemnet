@@ -10,48 +10,54 @@ class Transport(object):
     from utils.io import IO
     from utils.geo import Geo
 
-    def transport(self, request=None):
+    def transport(self):
         print('\nEnrich dataset with Stockholm public transportation features:')
-        helper, io = self.Helper(), self.IO()
         # Get raw property data
-        if request is None:
-            data = helper.remove_duplicates(self.File.SUBSET, self.File.TRANSPORT, ['url', 'coordinates'], ['url'])
-        else:
-            data = request
+        data = self.Helper().remove_duplicates(original_path=self.File.SUBSET,
+                                               target_path=self.File.TRANSPORT,
+                                               select=['url', 'latitude', 'longitude'],
+                                               dedup=['url'])
         # Check if anything to work on
         if len(data) == 0:
             print('There are no new properties to work on.')
             return
-        # Get transport data
+        data = self._enrichment(data=data, communication=True)
+        # Save
+        self.Helper().update_pq(data=data, path=self.File.TRANSPORT, dedup=['url'])
+        print("\nCompleted.")
+
+    def request_transport(self, request):
+        original_columns = list(request.columns)
+        output = self._enrichment(data=request)
+        return output.drop(columns=original_columns, axis=1)
+
+    def _enrichment(self, data, communication=False):
+        io = self.IO()
         transport = io.read_pq(self.File.SL_PROCESSED)
-        transport_types = self._get_transport_types(transport)  # A list of transportation types
-        # Enrich with transportation data
         distances = [[0, 250], [0, 500], [0, 1000]]
-        io.pause(2)
-        bar = self.tqdm(total=len(data), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
-        io.pause()
+        transport_types = self._get_transport_types(transport)
+        if communication:
+            io.pause(2)
+            bar = self.tqdm(total=len(data), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
+            io.pause()
         for index in data.index:
             entry = data.loc[[index]]
-            coordinates = entry.coordinates.item()
+            coordinates = [entry.latitude.item(), entry.longitude.item()]
             # Calculate distances from a specific given location to all public transport spots
             self.pd.set_option('mode.chained_assignment', None)
             transport['distance'] = self._calculate_distances(transport, coordinates)
             for category in transport_types:
                 query, suffix = self._get_filter(category), self._get_suffix(category)
                 subset = transport.query(query)
-                self._column_check(data, 'nearest_stop', suffix)
+                data = self._column_check(data, 'nearest_stop', suffix)
                 data['nearest_stop' + suffix][index] = min(subset.distance)
                 for distance in distances:
-                    self._generate_distance_features(index, data, distance, subset, category)
-            bar.update(1)
-        bar.close()
-        io.pause()  # Prevents issues with the layout of update messages im terminal
-        # Save
-        if request is None:
-            helper.update_pq(data=data, path=self.File.TRANSPORT, dedup=['url'])
-        else:
-            return data
-        print("\nCompleted.")
+                    data = self._generate_distance_features(index, data, distance, subset, category)
+            bar.update(1) if communication else None
+        if communication:
+            bar.close()
+            io.pause()  # Prevents issues with the layout of update messages im terminal
+        return data
 
     def _generate_distance_features(self, index, data, distance, transport, category):
         min_dist, max_dist = distance[0], distance[1]
@@ -63,6 +69,7 @@ class Transport(object):
         data['lines' + suffix][index] = self._count_distinct_lines(subset)
         data['stops' + suffix][index] = len(list(subset.StopAreaNumber.unique()))
         data['points' + suffix][index] = len(list(subset.StopPointNumber.unique()))
+        return data
 
     def _calculate_distances(self, transport, coordinates):
         geo = self.Geo()
@@ -107,6 +114,7 @@ class Transport(object):
     def _column_check(self, data, name, suffix):
         if name + suffix not in data.columns:
             data[name + suffix] = None
+        return data
 
 
 if __name__ == '__main__':
