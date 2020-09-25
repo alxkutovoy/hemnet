@@ -39,7 +39,7 @@ class Hyperparameters(object):
         # Run optimiser
         print('\n\tRun BayesianOptimization...\n')
         optimizer = self.BayesianOptimization(f=f, pbounds=pbounds, random_state=28)
-        optimizer.maximize(init_points=5, n_iter=100)
+        optimizer.maximize(init_points=5, n_iter=150)
         # Save result
         self._save_results(optimizer=optimizer, start=start, entries=len(x_train))
         print("\nHyperparameters optimisation was successfully completed.")
