@@ -35,7 +35,7 @@ class Parser(object):
     def get_property_id(self, content):
         raw = self._raw_meta(content)
         try:
-            return int(raw[1]["property"]["id"])
+            return raw[1]["property"]["id"]
         except Exception as e:
             return None
 
@@ -49,7 +49,7 @@ class Parser(object):
     def get_sold_property_id(self, content):
         raw = self._raw_meta(content)
         try:
-            return int(raw[2]["sold_property"]["id"])
+            return raw[2]["sold_property"]["id"]
         except Exception as e:
             return None
 
@@ -147,11 +147,23 @@ class Parser(object):
         except Exception as e:
             return None
 
-    def get_coordinates(self, content):  # TODO: Extract as a dict
+    def get_coordinates(self, content):
         raw = self._soup(content).find("div", {"class": "property-map"})
         try:
             coordinates_parsed = self.re.search('\[(.*)\]', str(raw))
             return self.np.float_(coordinates_parsed.group(1).split(',')).tolist()
+        except Exception as e:
+            return None
+
+    def get_latitude(self, content):
+        try:
+            return self.get_coordinates(content)[0]
+        except Exception as e:
+            return None
+
+    def get_longitude(self, content):
+        try:
+            return self.get_coordinates(content)[1]
         except Exception as e:
             return None
 
@@ -212,6 +224,8 @@ class Parser(object):
         raw = self._soup(content)
         try:
             broker_data = raw.find("div", {"class": "broker-contact-card__information"})
+            if broker_data is None:
+                broker_data = raw.find("p", {"class": "broker-card__text qa-broker-name"})
             return ' '.join(broker_data.strong.get_text().replace('\n', '').strip().split()).split(' ')
         except Exception as e:
             return None
@@ -219,7 +233,7 @@ class Parser(object):
     def get_broker_agency_id(self, content):
         raw = self._raw_meta(content)
         try:
-            return raw[2]["sold_property"]["broker_agency_id"]
+            return str(raw[2]["sold_property"]["broker_agency_id"])
         except Exception as e:
             return None
 
