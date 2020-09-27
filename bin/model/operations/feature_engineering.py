@@ -1,21 +1,11 @@
 class FeatureEngineering(object):
 
-    import gender_guesser.detector as gender
     import re
 
     from dateutil import relativedelta
 
     from utils.var import File
     from utils.io import IO
-
-    def broker_gender(self, data, com=True):
-        print('\tBroker gender...', end=' ', flush=True) if com else None
-        feature_name = 'broker_gender'
-        feature_metadata = {"name": feature_name, "dtype": "categorical", "used": True}
-        data = data.apply(lambda x: self._identify_gender(x.broker_full_name[0]), axis=1)
-        data = data.replace({'andy': None, 'mostly_male': None, 'mostly_female': None})
-        print('Done.') if com else None
-        return {"name": feature_name, "metadata": feature_metadata, "content": data}
 
     def building_age(self, data, com=True):
         io = self.IO()

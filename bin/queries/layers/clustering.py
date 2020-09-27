@@ -36,7 +36,7 @@ class Clustering(object):
         print("\nCompleted.")
 
     def request_clustering(self, request):
-        self.pd.options.mode.chained_assignment = None
+        self.pd.set_option('mode.chained_assignment', None)
         original_columns = list(request.columns)
         model = self.joblib.load(open(self.File.KMEANS, 'rb'))
         request[['cluster']] = model.predict(request)

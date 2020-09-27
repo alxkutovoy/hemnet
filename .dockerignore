@@ -1,0 +1,14 @@
+# Project directories
+/res/data
+/venv
+/cache
+
+# Hidden files and irrelevant things
+/.ipynb_checkpoints
+/.idea
+*.ipynb
+*.pyc
+
+# Meta and system files
+.DS_Store
+Thumbs.db
