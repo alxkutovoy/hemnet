@@ -1,4 +1,5 @@
 class Destinations(object):
+
     import json
     import pandas as pd
 
