@@ -1,9 +1,7 @@
-import sys
-sys.path.append("/Project/src/")
-
 import pandas as pd
 import pickle
 import numpy as np
+import time
 
 from flask import Flask, jsonify, request
 
@@ -23,16 +21,37 @@ MODEL = pickle.load(open(File.MODEL, 'rb'))
 @app.route('/api', methods=['GET'])
 def api():
     """Handle request and output model score in json format."""
-    # Handle empty requests.
+    # Measure execution time
+    start_time = time.time()
+    # Handle empty requests
     if not request.json:
         return jsonify({'error': 'no request received'})
-    # Parse request args into feature array for prediction
-    data = pd.DataFrame([request])
-    x = PayloadProcessing().enrichment(data)
+    # Parse request args
+    x_list, missing_data = parse_args(request.json)
+    x_array = np.array([x_list])
+    # Enrich data with variable queries and feature engineering
+    x = PayloadProcessing().enrichment(pd.DataFrame(x_array, columns=FEATURES))
     # Predict on x and return JSON response
     estimate = int(np.expm1(MODEL.predict(x))[0])
-    response = dict(ESTIMATE=estimate)
+    response = dict(ESTIMATED_PRICE=estimate, MISSING_DATA=missing_data, EXECUTION_TIME=time.time() - start_time)
     return jsonify(response)
+
+
+def parse_args(request_dict):
+    """Parse model features from incoming requests formatted in JSON."""
+    # Initialize missing_data as False.
+    missing_data = False
+    # Parse out the features from the request_dict.
+    x_list = []
+    for feature in FEATURES:
+        value = request_dict.get(feature, None)
+        if value:
+            x_list.append(value)
+        else:
+            # Handle missing features.
+            x_list.append(0)
+            missing_data = True
+    return x_list, missing_data
 
 
 if __name__ == '__main__':
