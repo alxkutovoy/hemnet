@@ -14,7 +14,7 @@ class Pages(object):
         helper, io, engine = self.Helper(), self.IO(), self.Engine()
         helper.metadata_synch()  # Synch sitemap metadata
         directory = self.Dir.PAGES
-        sitemap = io.read_pq(self.File.SITEMAP)[:30]
+        sitemap = io.read_pq(self.File.SITEMAP)
         print('\nDownload property pages:',
               f'\nThere are {len(sitemap)} property pages. '
               f'{(sitemap.extract == True).sum()} of them are already extracted.')
