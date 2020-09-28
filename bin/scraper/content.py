@@ -6,7 +6,7 @@ class Content(object):
 
     from bin.scraper.operations.parser import Parser
     from utils.helper import Helper
-    from utils.var import File
+    from utils.var import File, Dir
     from utils.io import IO
 
     def dataset(self):
@@ -42,7 +42,7 @@ class Content(object):
     def _extract(self, sitemap):
         io = self.IO()
         # Load pages.parquet
-        pages = io.read_pq(self.File.PAGES)
+        pages = io.squash_pq(self.Dir.PAGES)
         io.pause(2)
         data, total_pages, parsed_pages = [], len(sitemap), (sitemap.parse == True).sum()
         bar = self.tqdm(total=total_pages-parsed_pages, bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')

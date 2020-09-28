@@ -13,6 +13,9 @@ class Dir(object):
     # Raw data
     RAW = io.abs_path('res/data/raw')
 
+    # Pages
+    PAGES = io.path_join(RAW, 'pages')
+
     # Google Maps library
     GMAPS = io.abs_path('res/lib/gmaps')
 
@@ -31,7 +34,6 @@ class File(object):
 
     # Scrapped data
     SITEMAP = io.path_join(Dir.RAW, 'sitemap/sitemap.parquet')
-    PAGES = io.path_join(Dir.RAW, 'pages/pages.parquet')
     CONTENT = io.path_join(Dir.RAW, 'content/content.parquet')
 
     # Subset of content that includes only relevant (filtered) entries

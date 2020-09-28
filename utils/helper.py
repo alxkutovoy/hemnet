@@ -5,7 +5,7 @@ class Helper(object):
 
     from tqdm import tqdm
 
-    from utils.var import File
+    from utils.var import File, Dir
     from utils.io import IO
 
     def metadata_synch(self):
@@ -19,7 +19,8 @@ class Helper(object):
         self.pd.options.mode.chained_assignment = None
         # Extract into pandas data frame
         sitemap = updated = io.read_pq(self.File.SITEMAP)
-        pages = io.read_pq(self.File.PAGES) if io.exists(self.File.PAGES) else None
+        pages = io.squash_pq(self.Dir.PAGES) \
+            if io.file_counter(directory=self.Dir.PAGES, pattern='*.parquet') else None
         content = io.read_pq(self.File.CONTENT) if io.exists(self.File.CONTENT) else None
         # Synchronise sitemap metadata with extracted and parsed data frames
         bar = self.tqdm(total=len(sitemap), bar_format='{l_bar}{bar:50}{r_bar}{bar:-50b}')
@@ -49,17 +50,17 @@ class Helper(object):
         io.save_pq(data=updated, path=self.File.SITEMAP)
         print('Metadata in sitemap.parquet are up to date.')
 
-    def update_pq(self, data, path, dedup):
+    def update_pq(self, data, path, dedup, com=True):
         io = self.IO()
         directory, file_name = io.dir_and_base(path)
         io.make_dir(directory)
-        print('\nSaving data into *.parquet...')
+        print('\nSaving data into *.parquet...') if com else None
         # If file exists but has different schema (columns) – remove it
         if io.exists(path):
             existing = io.read_pq(path)
             identical_columns = len(existing.columns.intersection(data.columns)) == data.shape[1]
             if not identical_columns:
-                print('Datasets have different schemas. Removing the old version.')
+                print('Datasets have different schemas. Removing the old version.') if com else None
                 io.remove(path)
         # If exists – update
         if io.exists(path):
@@ -71,14 +72,14 @@ class Helper(object):
             new = total - existing
             duplicates = len(data) - new
             self.logger(directory, file_name, total, new, existing)
-            print(f'Adding {new} new rows. {duplicates} duplicates excluded. {total} rows in total.')
+            print(f'Adding {new} new rows. {duplicates} duplicates excluded. {total} rows in total.') if com else None
         # Else – create a new file
         else:
             data = data.drop_duplicates(subset=dedup).reset_index(drop=True)
             io.save_pq(data=data, path=path)
             new = total = len(data.index)
             self.logger(directory, file_name, total, new)
-            print(f'Creating {len(data.index)} new rows.')
+            print(f'Creating {len(data.index)} new rows.') if com else None
 
     def remove_duplicates(self, original_path, target_path, select, dedup):
         io = self.IO()
