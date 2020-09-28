@@ -34,29 +34,21 @@ class Pages(object):
         # Iterate over months
         for month in months:
             sitemap_subset = sitemap.query("create_date.str.contains(@month)", engine='python')
-            prefix = '_'.join(month.split('-')[0:2])
-            name = f'pages_{prefix}.parquet'
-            data = self._extract(sitemap_subset, directory, bar)
-            # Convert list into a dataframe and add extra columns
-            df = self.pd.DataFrame(data)
-            df.columns = ['url', 'page']
-            df.insert(0, 'add_ts', io.now())
-            # Update sitemap dataset
-            old = io.read_pq(self.File.SITEMAP)
-            old.update(sitemap_subset)
-            io.save_pq(data=old, path=self.File.SITEMAP)
-            # Save into *.parquet file
-            helper.update_pq(data=df, path=io.path_join(self.Dir.PAGES, name), dedup=['url'], com=False)
+            self._extract(sitemap=sitemap_subset,
+                          pages_directory=directory,
+                          bar=bar,
+                          prefix='_'.join(month.split('-')[0:2]))  # Prefix: YYYY_MM
         # End
         bar.close()
         io.pause(2)  # Prevents issues with the layout of update messages im terminal
         print('\nPages have been successfully downloaded.')
         engine.shutdown_engine()  # Close Safari
 
-    def _extract(self, sitemap, pages_directory, bar):
+    def _extract(self, sitemap, pages_directory, bar, prefix):
         helper, engine, io = self.Helper(), self.Engine(), self.IO()
         driver = engine.initiate_engine()
         data, total_pages, absent_pages = [], len(sitemap), 0
+        name = f'pages_{prefix}.parquet'
         for index in sitemap.index:
             entry = sitemap.loc[[index]]
             url = entry.url.item()
@@ -70,7 +62,10 @@ class Pages(object):
                 io.pause(5)
                 helper.errors(directory=pages_directory, index=index, url=url, error=e)
             bar.update(1)
-        return data
+            if len(data) > 0 and len(data) % 50 == 0:  # Save progress every 10 pages
+                self._save_pages(data, name, sitemap)
+                data = []  # Reset buffer
+        self._save_pages(data, name, sitemap) if len(data) > 0 else None
 
     def _download(self, url, driver):
         io, captcha = self.IO(), self.Captcha()
@@ -91,6 +86,18 @@ class Pages(object):
         sitemap['extract'][index] = True
         sitemap['extract_ts'][index] = io.now()
 
+    def _save_pages(self, data, name, sitemap):
+        helper, io = self.Helper(), self.IO()
+        # Convert list into a dataframe and add extra columns
+        df = self.pd.DataFrame(data)
+        df.columns = ['url', 'page']
+        df.insert(0, 'add_ts', io.now())
+        # Update sitemap dataset
+        old = io.read_pq(self.File.SITEMAP)
+        old.update(sitemap)
+        io.save_pq(data=old, path=self.File.SITEMAP)
+        # Save into *.parquet file
+        helper.update_pq(data=df, path=io.path_join(self.Dir.PAGES, name), dedup=['url'], com=False)
 
 if __name__ == '__main__':
     Pages().dataset()
