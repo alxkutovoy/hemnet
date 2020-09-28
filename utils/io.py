@@ -40,8 +40,11 @@ class IO(object):
     def dir_and_base(self, path):
         return self.os.path.dirname(path), self.os.path.basename(path)
 
-    def file_counter(self, directory):
-        return sum([len(files) for r, d, files in self.os.walk(self.path.join(self.os.getcwd(), directory))])
+    def file_counter(self, directory, pattern='*'):
+        counter = 0
+        for i in self.Path(directory).glob(pattern):
+            counter += 1
+        return counter
 
     def pause(self, sec=random.randint(3, 7) / 10):
         return self.time.sleep(sec)
@@ -59,6 +62,10 @@ class IO(object):
         else:
             file_name = path.split('/')[-1]
             print(f'\nSorry, file {file_name} does not exist.')
+
+    def squash_pq(self, directory, pattern='*.parquet'):
+        return self.pd.concat(self.pd.read_parquet(parquet_file)
+                              for parquet_file in self.Path(directory).glob(pattern)).reset_index(drop=True)
 
     def save_pkl(self, model, path=None, directory=None, name=None):
         directory = self.dir(path) if not directory and path else directory

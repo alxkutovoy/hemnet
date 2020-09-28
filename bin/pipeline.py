@@ -52,4 +52,4 @@ class Pipeline(object):
 
 
 if __name__ == '__main__':
-    Pipeline().run_pipeline()
+    Pipeline().run_scraper()
