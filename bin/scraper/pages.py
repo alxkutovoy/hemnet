@@ -34,21 +34,19 @@ class Pages(object):
         # Iterate over months
         for month in months:
             sitemap_subset = sitemap.query("create_date.str.contains(@month)", engine='python')
-            self._extract(sitemap=sitemap_subset,
-                          pages_directory=directory,
-                          bar=bar,
-                          prefix='_'.join(month.split('-')[0:2]))  # Prefix: YYYY_MM
+            self._extract(sitemap=sitemap_subset, pages_directory=directory, bar=bar, month=month)
         # End
         bar.close()
         io.pause(2)  # Prevents issues with the layout of update messages im terminal
-        print('\nPages have been successfully downloaded.')
+        print('Pages have been successfully downloaded.')
         engine.shutdown_engine()  # Close Safari
 
-    def _extract(self, sitemap, pages_directory, bar, prefix):
+    def _extract(self, sitemap, pages_directory, bar, month):
         helper, engine, io = self.Helper(), self.Engine(), self.IO()
         driver = engine.initiate_engine()
         data, total_pages, absent_pages = [], len(sitemap), 0
-        name = f'pages_{prefix}.parquet'
+        suffix = '_'.join(month.split('-')[0:2])  # Prefix: YYYY_MM
+        name = f'pages_{suffix}.parquet'
         for index in sitemap.index:
             entry = sitemap.loc[[index]]
             url = entry.url.item()
@@ -62,7 +60,7 @@ class Pages(object):
                 io.pause(5)
                 helper.errors(directory=pages_directory, index=index, url=url, error=e)
             bar.update(1)
-            if len(data) > 0 and len(data) % 50 == 0:  # Save progress every 10 pages
+            if len(data) > 0 and len(data) % 100 == 0:  # Save progress every 100 pages
                 self._save_pages(data, name, sitemap)
                 data = []  # Reset buffer
         self._save_pages(data, name, sitemap) if len(data) > 0 else None
@@ -98,6 +96,7 @@ class Pages(object):
         io.save_pq(data=old, path=self.File.SITEMAP)
         # Save into *.parquet file
         helper.update_pq(data=df, path=io.path_join(self.Dir.PAGES, name), dedup=['url'], com=False)
+
 
 if __name__ == '__main__':
     Pages().dataset()
