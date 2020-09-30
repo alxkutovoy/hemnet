@@ -1,6 +1,5 @@
 class Hyperparameters(object):
 
-    import json
     import numpy as np
     import warnings
 
@@ -39,7 +38,7 @@ class Hyperparameters(object):
         # Run optimiser
         print('\n\tRun BayesianOptimization...\n')
         optimizer = self.BayesianOptimization(f=f, pbounds=pbounds, random_state=28)
-        optimizer.maximize(init_points=5, n_iter=150)
+        optimizer.maximize(init_points=5, n_iter=100)
         # Save result
         self._save_results(optimizer=optimizer, start=start, entries=len(x_train))
         print("\nHyperparameters optimisation was successfully completed.")
@@ -62,24 +61,17 @@ class Hyperparameters(object):
         scores = cross_val_score(estimator, x_train, y_train, cv=5, scoring='neg_root_mean_squared_error')
         return self.np.mean(scores)
 
-    def _save_results(self, optimizer, start, entries):  # TODO: Save into CSV instead of JSON
+    def _save_results(self, optimizer, start, entries):
         io = self.IO()
         path = self.File.HYPERPARAMETERS
         io.make_dir(io.dir(path))
-        duration = io.now() - start
-        data = {'ts': str(start), 'duration': str(duration), 'entries:': entries, 'hyperparameters': optimizer.max}
+        data = [str(start), str(io.now() - start), entries, optimizer.max['target'], optimizer.max]
         if io.exists(path):
-            with open(path) as f:
-                existing = self.json.load(f)
-                updated = existing + [data]
-                f.close()
-            with open(path, 'w') as f:
-                f.write(self.json.dumps(updated))
-                f.close()
+            io.append_csv(path=path, fields=data)
         else:
-            with open(path, 'w+') as f:
-                f.write(self.json.dumps([data]))
-                f.close()
+            header = ['ts', 'duration', 'entries', 'target', 'hyperparameters']
+            io.create_csv(path=path, header=header)
+            io.append_csv(path=path, fields=data)
 
 
 if __name__ == '__main__':
