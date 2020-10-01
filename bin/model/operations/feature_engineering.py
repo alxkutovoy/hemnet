@@ -185,9 +185,6 @@ class FeatureEngineering(object):
 
     # Helpers
 
-    def _identify_gender(self, name):
-        return self.gender.Detector().get_gender(f"{name}", u'sweden')
-
     def _time_diff(self, start, end):
         return self.relativedelta.relativedelta(start, end)
 

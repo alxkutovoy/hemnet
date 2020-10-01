@@ -84,7 +84,7 @@ class File(object):
     SELECTED_FEATURES = io.abs_path('res/model/features.txt')
 
     # Hyperparameters
-    HYPERPARAMETERS = io.abs_path('res/model/bayesian_hyperparameters.json')
+    HYPERPARAMETERS = io.abs_path('res/model/bayesian_hyperparameters.csv')
 
     # Model
     MODEL = io.abs_path('res/model/model.pkl')

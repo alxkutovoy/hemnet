@@ -46,8 +46,8 @@ class Data(object):
         if not io.exists(self.File.HYPERPARAMETERS):
             print('\nSorry, hyperparameters file does not exist. Please, run hyperparameters tuning first.')
             return
-        with open(self.File.HYPERPARAMETERS, 'r') as f:
-            hypers = self.json.load(f)[-1]['hyperparameters']['params']
+        data = io.read_csv(self.File.HYPERPARAMETERS)
+        hypers = self.json.loads(data.iloc[-1]['hyperparameters'].replace("\'", "\""))['params']
         for param in ['num_leaves', 'max_depth', 'n_estimators', 'min_child_samples']:
             if param in hypers:
                 hypers[param] = int(hypers[param])
